@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Global Energy Transition Explorer</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://d3js.org/topojson.v3.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Global Energy Transition Explorer</h1>
+      <p class="subtitle">Explore how the world's electricity sources have shifted from 1960 to 2020</p>
+    </header>
+
+    <div id="controls">
+      <div class="control-group">
+        <label for="metric-select">Map Metric:</label>
+        <select id="metric-select">
+          <option value="fossil_fuel_pct">Fossil Fuel Consumption (%)</option>
+          <option value="renewable_pct">Renewable Energy Consumption (%)</option>
+          <option value="access_electricity">Access to Electricity (%)</option>
+          <option value="renewable_elec_output">Renewable Electricity Output (%)</option>
+          <option value="energy_per_capita">Energy Use per Capita (kg oil eq.)</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="region-select">Region Filter:</label>
+        <select id="region-select">
+          <option value="all">All Regions</option>
+        </select>
+      </div>
+      <div class="control-group play-group">
+        <button id="play-btn">&#9654; Play</button>
+      </div>
+    </div>
+
+    <div id="year-display">
+      <span id="year-label">2000</span>
+    </div>
+    <div id="slider-container">
+      <input type="range" id="year-slider" min="1960" max="2020" value="2000" step="1">
+    </div>
+
+    <div id="main-content">
+      <div id="map-panel">
+        <div id="map-container">
+          <svg id="map-svg"></svg>
+        </div>
+        <div id="legend-container"></div>
+      </div>
+      <div id="chart-panel">
+        <h3 id="chart-title">Select a country on the map</h3>
+        <svg id="stack-chart"></svg>
+        <div id="annotation-box"></div>
+      </div>
+    </div>
+
+    <div id="comparison-section">
+      <h3>Country Comparison <span id="comparison-hint">(Click countries on the map to compare, max 6)</span></h3>
+      <div id="sparklines"></div>
+    </div>
+
+    <div id="tooltip"></div>
+  </div>
+
+  <script src="iso_codes.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

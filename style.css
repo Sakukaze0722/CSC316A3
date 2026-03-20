@@ -1,0 +1,357 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #0f1923;
+  color: #e0e6ed;
+  min-height: 100vh;
+}
+
+#app {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 30px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #4fc3f7;
+  letter-spacing: 0.5px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #8899aa;
+  margin-top: 4px;
+}
+
+/* Controls */
+#controls {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-group label {
+  font-size: 13px;
+  color: #8899aa;
+  white-space: nowrap;
+}
+
+select {
+  background: #1a2733;
+  color: #e0e6ed;
+  border: 1px solid #2d3e50;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+
+select:hover {
+  border-color: #4fc3f7;
+}
+
+#play-btn {
+  background: #1a6b3c;
+  color: #e0e6ed;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 18px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#play-btn:hover {
+  background: #22874d;
+}
+
+#play-btn.playing {
+  background: #b33a3a;
+}
+
+/* Year slider */
+#year-display {
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+#year-label {
+  font-size: 48px;
+  font-weight: 800;
+  color: #4fc3f7;
+  font-variant-numeric: tabular-nums;
+}
+
+#slider-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+#year-slider {
+  width: 80%;
+  max-width: 800px;
+  accent-color: #4fc3f7;
+  height: 6px;
+  cursor: pointer;
+}
+
+/* Main layout */
+#main-content {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+#map-panel {
+  flex: 1.2;
+  min-width: 0;
+}
+
+#map-container {
+  background: #152230;
+  border-radius: 10px;
+  border: 1px solid #2d3e50;
+  overflow: hidden;
+  position: relative;
+}
+
+#map-svg {
+  width: 100%;
+  display: block;
+}
+
+#legend-container {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #8899aa;
+}
+
+#legend-container svg {
+  display: block;
+}
+
+#chart-panel {
+  flex: 0.8;
+  min-width: 320px;
+  background: #152230;
+  border-radius: 10px;
+  border: 1px solid #2d3e50;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+#chart-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #b0bec5;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+#stack-chart {
+  width: 100%;
+  flex: 1;
+}
+
+#annotation-box {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8899aa;
+  line-height: 1.5;
+  min-height: 40px;
+}
+
+/* Comparison sparklines */
+#comparison-section {
+  background: #152230;
+  border-radius: 10px;
+  border: 1px solid #2d3e50;
+  padding: 16px;
+}
+
+#comparison-section h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #b0bec5;
+  margin-bottom: 12px;
+}
+
+#comparison-hint {
+  font-size: 12px;
+  font-weight: 400;
+  color: #5a6f80;
+}
+
+#sparklines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.spark-card {
+  background: #1a2733;
+  border-radius: 8px;
+  padding: 10px 14px;
+  min-width: 200px;
+  flex: 1;
+  max-width: 300px;
+  position: relative;
+}
+
+.spark-card .spark-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e0e6ed;
+  margin-bottom: 4px;
+}
+
+.spark-card .spark-value {
+  font-size: 11px;
+  color: #4fc3f7;
+  margin-bottom: 6px;
+}
+
+.spark-card .remove-btn {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: #5a6f80;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.spark-card .remove-btn:hover {
+  color: #e57373;
+}
+
+/* Tooltip */
+#tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: rgba(15, 25, 35, 0.95);
+  border: 1px solid #4fc3f7;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #e0e6ed;
+  display: none;
+  z-index: 1000;
+  max-width: 260px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+#tooltip .tt-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: #4fc3f7;
+  margin-bottom: 4px;
+}
+
+#tooltip .tt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+#tooltip .tt-label {
+  color: #8899aa;
+}
+
+#tooltip .tt-val {
+  font-weight: 600;
+}
+
+/* Country highlight */
+.country-path {
+  stroke: #1a2733;
+  stroke-width: 0.5;
+  cursor: pointer;
+  transition: stroke-width 0.15s;
+}
+
+.country-path:hover {
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+.country-path.selected {
+  stroke: #ffeb3b;
+  stroke-width: 2;
+}
+
+/* Stacked area chart */
+.area-layer {
+  opacity: 0.85;
+}
+
+.area-layer:hover {
+  opacity: 1;
+}
+
+.chart-axis text {
+  fill: #8899aa;
+  font-size: 11px;
+}
+
+.chart-axis line,
+.chart-axis path {
+  stroke: #2d3e50;
+}
+
+.year-indicator {
+  stroke: #ffeb3b;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+/* Annotations */
+.annotation-line {
+  stroke: #5a6f80;
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
+}
+
+.annotation-label {
+  fill: #8899aa;
+  font-size: 9px;
+}
+
+@media (max-width: 900px) {
+  #main-content {
+    flex-direction: column;
+  }
+  #chart-panel {
+    min-width: unset;
+  }
+}
