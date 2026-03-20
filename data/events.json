@@ -1,0 +1,602 @@
+[
+  {
+    "code": "USA",
+    "country": "United States",
+    "year": 1978,
+    "keyword": "PURPA",
+    "title": "Public Utility Regulatory Policies Act",
+    "impact": "Opened markets for independent power producers and early renewables."
+  },
+  {
+    "code": "USA",
+    "country": "United States",
+    "year": 2005,
+    "keyword": "Federal Tax Credits",
+    "title": "Energy Policy Act of 2005",
+    "impact": "Expanded incentives that accelerated wind and solar investment."
+  },
+  {
+    "code": "USA",
+    "country": "United States",
+    "year": 2009,
+    "keyword": "Clean Energy Stimulus",
+    "title": "American Recovery and Reinvestment Act",
+    "impact": "Large-scale public spending supported grid and clean energy deployment."
+  },
+  {
+    "code": "DEU",
+    "country": "Germany",
+    "year": 1991,
+    "keyword": "Feed-in Law",
+    "title": "Electricity Feed-in Act",
+    "impact": "Created guaranteed payments for renewable generation."
+  },
+  {
+    "code": "DEU",
+    "country": "Germany",
+    "year": 2000,
+    "keyword": "EEG",
+    "title": "Renewable Energy Sources Act",
+    "impact": "Scaled feed-in tariffs and rapidly expanded wind and solar."
+  },
+  {
+    "code": "DEU",
+    "country": "Germany",
+    "year": 2011,
+    "keyword": "Energiewende",
+    "title": "Post-Fukushima Nuclear Phase-out Decision",
+    "impact": "Accelerated power-sector restructuring toward renewables."
+  },
+  {
+    "code": "GBR",
+    "country": "United Kingdom",
+    "year": 2002,
+    "keyword": "RO",
+    "title": "Renewables Obligation",
+    "impact": "Established a key market mechanism for renewable electricity growth."
+  },
+  {
+    "code": "GBR",
+    "country": "United Kingdom",
+    "year": 2008,
+    "keyword": "Climate Law",
+    "title": "Climate Change Act",
+    "impact": "Set legally binding carbon budgets that shaped power policy."
+  },
+  {
+    "code": "GBR",
+    "country": "United Kingdom",
+    "year": 2013,
+    "keyword": "Carbon Price Floor",
+    "title": "Power-sector Carbon Price Support",
+    "impact": "Raised effective carbon costs and sped coal displacement."
+  },
+  {
+    "code": "FRA",
+    "country": "France",
+    "year": 1974,
+    "keyword": "Messmer Plan",
+    "title": "Rapid Nuclear Buildout Strategy",
+    "impact": "Drove long-run low-carbon electricity through nuclear expansion."
+  },
+  {
+    "code": "FRA",
+    "country": "France",
+    "year": 2005,
+    "keyword": "EU ETS",
+    "title": "European Emissions Trading System Start",
+    "impact": "Introduced carbon pricing signals for industry and power."
+  },
+  {
+    "code": "FRA",
+    "country": "France",
+    "year": 2015,
+    "keyword": "Energy Transition Act",
+    "title": "Energy Transition for Green Growth Law",
+    "impact": "Expanded targets for efficiency and renewables."
+  },
+  {
+    "code": "JPN",
+    "country": "Japan",
+    "year": 1979,
+    "keyword": "Efficiency Law",
+    "title": "Energy Conservation Act",
+    "impact": "Institutionalized high-efficiency standards after oil shocks."
+  },
+  {
+    "code": "JPN",
+    "country": "Japan",
+    "year": 2011,
+    "keyword": "Fukushima",
+    "title": "Fukushima Nuclear Accident",
+    "impact": "Triggered a major reset of the generation mix and fuel imports."
+  },
+  {
+    "code": "JPN",
+    "country": "Japan",
+    "year": 2012,
+    "keyword": "Feed-in Tariff",
+    "title": "National FIT Program",
+    "impact": "Increased investment in solar and other renewables."
+  },
+  {
+    "code": "CAN",
+    "country": "Canada",
+    "year": 2001,
+    "keyword": "Wind Incentive",
+    "title": "Wind Power Production Incentive",
+    "impact": "Improved project economics for utility-scale wind."
+  },
+  {
+    "code": "CAN",
+    "country": "Canada",
+    "year": 2016,
+    "keyword": "Pan-Canadian Framework",
+    "title": "National Climate Plan",
+    "impact": "Aligned federal-provincial actions on carbon and clean growth."
+  },
+  {
+    "code": "AUS",
+    "country": "Australia",
+    "year": 2001,
+    "keyword": "MRET",
+    "title": "Mandatory Renewable Energy Target",
+    "impact": "Set national renewable obligations for electricity retailers."
+  },
+  {
+    "code": "AUS",
+    "country": "Australia",
+    "year": 2009,
+    "keyword": "Expanded RET",
+    "title": "Renewable Energy Target Expansion",
+    "impact": "Raised long-term renewable deployment expectations."
+  },
+  {
+    "code": "AUS",
+    "country": "Australia",
+    "year": 2012,
+    "keyword": "Carbon Pricing",
+    "title": "Clean Energy Act",
+    "impact": "Introduced an economy-wide carbon price with power-sector effects."
+  },
+  {
+    "code": "AUS",
+    "country": "Australia",
+    "year": 2014,
+    "keyword": "Policy Reversal",
+    "title": "Carbon Price Repeal",
+    "impact": "Reduced carbon-cost pressure on fossil generation."
+  },
+  {
+    "code": "KOR",
+    "country": "South Korea",
+    "year": 2008,
+    "keyword": "Green Growth",
+    "title": "Low-Carbon Green Growth Strategy",
+    "impact": "Set national direction for efficiency and clean technology."
+  },
+  {
+    "code": "KOR",
+    "country": "South Korea",
+    "year": 2012,
+    "keyword": "RPS",
+    "title": "Renewable Portfolio Standard",
+    "impact": "Replaced FIT and mandated renewable shares for large generators."
+  },
+  {
+    "code": "KOR",
+    "country": "South Korea",
+    "year": 2015,
+    "keyword": "K-ETS",
+    "title": "Korea Emissions Trading Scheme Launch",
+    "impact": "Added carbon market signals for energy-intensive sectors."
+  },
+  {
+    "code": "SWE",
+    "country": "Sweden",
+    "year": 1991,
+    "keyword": "Carbon Tax",
+    "title": "Swedish Carbon Tax Reform",
+    "impact": "Created sustained incentives to shift away from fossil fuels."
+  },
+  {
+    "code": "SWE",
+    "country": "Sweden",
+    "year": 2003,
+    "keyword": "Green Certificates",
+    "title": "Electricity Certificate System",
+    "impact": "Supported additional renewable capacity growth."
+  },
+  {
+    "code": "DNK",
+    "country": "Denmark",
+    "year": 1991,
+    "keyword": "Offshore Wind",
+    "title": "Vindeby Offshore Wind Farm",
+    "impact": "Demonstrated commercial offshore wind and accelerated scaling."
+  },
+  {
+    "code": "DNK",
+    "country": "Denmark",
+    "year": 2012,
+    "keyword": "Energy Agreement",
+    "title": "Broad Cross-party Energy Deal",
+    "impact": "Strengthened long-term renewable and efficiency targets."
+  },
+  {
+    "code": "NOR",
+    "country": "Norway",
+    "year": 1991,
+    "keyword": "Carbon Tax",
+    "title": "Norwegian CO2 Tax Introduction",
+    "impact": "Applied carbon pricing in key energy-related sectors."
+  },
+  {
+    "code": "NOR",
+    "country": "Norway",
+    "year": 2012,
+    "keyword": "Certificate Market",
+    "title": "Norway-Sweden Green Certificate Scheme",
+    "impact": "Enabled additional renewable generation projects."
+  },
+  {
+    "code": "NLD",
+    "country": "Netherlands",
+    "year": 2013,
+    "keyword": "Energy Agreement",
+    "title": "National Energy Agreement",
+    "impact": "Expanded renewable and efficiency commitments."
+  },
+  {
+    "code": "NLD",
+    "country": "Netherlands",
+    "year": 2019,
+    "keyword": "Climate Accord",
+    "title": "Dutch Climate Agreement",
+    "impact": "Set sectoral transition pathways, including power decarbonization."
+  },
+  {
+    "code": "USA",
+    "country": "United States",
+    "year": 1992,
+    "keyword": "EPAct 1992",
+    "title": "Energy Policy Act of 1992",
+    "impact": "Expanded federal efficiency standards and supported non-utility generation."
+  },
+  {
+    "code": "USA",
+    "country": "United States",
+    "year": 2015,
+    "keyword": "Clean Power Plan",
+    "title": "EPA Clean Power Plan",
+    "impact": "Set federal emissions-reduction targets for the electricity sector."
+  },
+  {
+    "code": "DEU",
+    "country": "Germany",
+    "year": 2010,
+    "keyword": "Energiekonzept",
+    "title": "Germany Energy Concept 2010",
+    "impact": "Defined long-term decarbonization milestones and grid modernization goals."
+  },
+  {
+    "code": "DEU",
+    "country": "Germany",
+    "year": 2014,
+    "keyword": "EEG 2014",
+    "title": "Renewable Energy Sources Act Reform",
+    "impact": "Shifted support toward auctions and restructured renewable expansion incentives."
+  },
+  {
+    "code": "GBR",
+    "country": "United Kingdom",
+    "year": 2010,
+    "keyword": "UK FIT",
+    "title": "Feed-in Tariffs in the United Kingdom",
+    "impact": "Accelerated distributed solar PV adoption through guaranteed tariff payments."
+  },
+  {
+    "code": "GBR",
+    "country": "United Kingdom",
+    "year": 2013,
+    "keyword": "Energy Act 2013",
+    "title": "Electricity Market Reform",
+    "impact": "Introduced contracts-for-difference and capacity market mechanisms."
+  },
+  {
+    "code": "GBR",
+    "country": "United Kingdom",
+    "year": 2019,
+    "keyword": "Net Zero Law",
+    "title": "2050 Net Zero Target in Climate Change Act",
+    "impact": "Legally tightened long-run decarbonization requirements across sectors."
+  },
+  {
+    "code": "FRA",
+    "country": "France",
+    "year": 2007,
+    "keyword": "Grenelle",
+    "title": "Grenelle Environnement Process",
+    "impact": "Created a broad policy framework for efficiency and clean energy expansion."
+  },
+  {
+    "code": "FRA",
+    "country": "France",
+    "year": 2010,
+    "keyword": "Grenelle II",
+    "title": "Grenelle II Law",
+    "impact": "Translated climate and energy objectives into enforceable implementation measures."
+  },
+  {
+    "code": "FRA",
+    "country": "France",
+    "year": 2019,
+    "keyword": "Energy-Climate Law",
+    "title": "French Energy and Climate Law",
+    "impact": "Updated national climate governance and sharpened low-carbon planning."
+  },
+  {
+    "code": "JPN",
+    "country": "Japan",
+    "year": 1999,
+    "keyword": "Top Runner",
+    "title": "Top Runner Energy Efficiency Program",
+    "impact": "Pushed appliance and vehicle efficiency standards via benchmark competition."
+  },
+  {
+    "code": "JPN",
+    "country": "Japan",
+    "year": 2003,
+    "keyword": "RPS Law",
+    "title": "Renewable Portfolio Standard Law",
+    "impact": "Required utilities to procure minimum quantities of renewable electricity."
+  },
+  {
+    "code": "JPN",
+    "country": "Japan",
+    "year": 2014,
+    "keyword": "4th Strategic Plan",
+    "title": "Fourth Strategic Energy Plan",
+    "impact": "Reset national power mix strategy after Fukushima and expanded diversification targets."
+  },
+  {
+    "code": "CAN",
+    "country": "Canada",
+    "year": 2009,
+    "keyword": "Ontario GEA",
+    "title": "Green Energy and Green Economy Act (Ontario)",
+    "impact": "Drove rapid wind and solar procurement through provincial feed-in tariffs."
+  },
+  {
+    "code": "CAN",
+    "country": "Canada",
+    "year": 2018,
+    "keyword": "GHG Pricing Act",
+    "title": "Greenhouse Gas Pollution Pricing Act",
+    "impact": "Established a federal carbon-pricing backstop affecting energy system choices."
+  },
+  {
+    "code": "AUS",
+    "country": "Australia",
+    "year": 2011,
+    "keyword": "Clean Energy Future",
+    "title": "Clean Energy Future Package",
+    "impact": "Bundled carbon pricing, compensation, and clean energy support policies."
+  },
+  {
+    "code": "AUS",
+    "country": "Australia",
+    "year": 2015,
+    "keyword": "RET Amendment",
+    "title": "Renewable Energy (Electricity) Amendment Act 2015",
+    "impact": "Recalibrated large-scale renewable targets and compliance settings."
+  },
+  {
+    "code": "KOR",
+    "country": "South Korea",
+    "year": 2010,
+    "keyword": "Framework Act",
+    "title": "Framework Act on Low Carbon, Green Growth",
+    "impact": "Institutionalized national climate and green industry planning."
+  },
+  {
+    "code": "KOR",
+    "country": "South Korea",
+    "year": 2019,
+    "keyword": "3rd Energy Master Plan",
+    "title": "Third National Energy Master Plan",
+    "impact": "Expanded medium-term direction for cleaner generation and demand-side management."
+  },
+  {
+    "code": "SWE",
+    "country": "Sweden",
+    "year": 2016,
+    "keyword": "Energy Agreement 2016",
+    "title": "Cross-party Swedish Energy Agreement",
+    "impact": "Set a durable political framework for long-run renewable electricity expansion."
+  },
+  {
+    "code": "SWE",
+    "country": "Sweden",
+    "year": 2017,
+    "keyword": "Climate Act",
+    "title": "Swedish Climate Act",
+    "impact": "Required climate-policy planning cycles and strengthened accountability."
+  },
+  {
+    "code": "DNK",
+    "country": "Denmark",
+    "year": 2008,
+    "keyword": "Energy Deal 2008",
+    "title": "Danish Energy Agreement 2008",
+    "impact": "Scaled efficiency and renewable deployment commitments before 2020."
+  },
+  {
+    "code": "DNK",
+    "country": "Denmark",
+    "year": 2018,
+    "keyword": "Energy Deal 2018",
+    "title": "Danish Energy Agreement 2018",
+    "impact": "Raised offshore wind and clean-power targets with broad party support."
+  },
+  {
+    "code": "NOR",
+    "country": "Norway",
+    "year": 2017,
+    "keyword": "Climate Act",
+    "title": "Norwegian Climate Change Act",
+    "impact": "Embedded long-term emissions targets into national law."
+  },
+  {
+    "code": "NLD",
+    "country": "Netherlands",
+    "year": 2015,
+    "keyword": "Urgenda Case",
+    "title": "Urgenda District Court Ruling",
+    "impact": "Court decision increased pressure for stronger national emissions cuts."
+  },
+  {
+    "code": "NLD",
+    "country": "Netherlands",
+    "year": 2019,
+    "keyword": "Urgenda Supreme Court",
+    "title": "Urgenda Supreme Court Decision",
+    "impact": "Confirmed legal duty for faster near-term emissions reduction."
+  },
+  {
+    "code": "ITA",
+    "country": "Italy",
+    "year": 2005,
+    "keyword": "Conto Energia I",
+    "title": "First Conto Energia Program",
+    "impact": "Launched Italy's national feed-in support for solar photovoltaics."
+  },
+  {
+    "code": "ITA",
+    "country": "Italy",
+    "year": 2007,
+    "keyword": "Conto Energia II",
+    "title": "Second Conto Energia Program",
+    "impact": "Expanded PV incentives and accelerated utility and distributed installations."
+  },
+  {
+    "code": "ITA",
+    "country": "Italy",
+    "year": 2013,
+    "keyword": "Conto Energia End",
+    "title": "Conclusion of Fifth Conto Energia",
+    "impact": "Marked the end of direct feed-in support and a shift in policy instruments."
+  },
+  {
+    "code": "ESP",
+    "country": "Spain",
+    "year": 2007,
+    "keyword": "RD 661/2007",
+    "title": "Royal Decree 661/2007",
+    "impact": "Created powerful remuneration terms that triggered rapid renewable buildout."
+  },
+  {
+    "code": "ESP",
+    "country": "Spain",
+    "year": 2008,
+    "keyword": "RD 1578/2008",
+    "title": "Royal Decree 1578/2008",
+    "impact": "Adjusted PV incentives after rapid growth and introduced tighter control."
+  },
+  {
+    "code": "ESP",
+    "country": "Spain",
+    "year": 2012,
+    "keyword": "RDL 1/2012",
+    "title": "Renewable Subsidy Moratorium",
+    "impact": "Paused key incentive mechanisms and slowed new renewable investment."
+  },
+  {
+    "code": "ESP",
+    "country": "Spain",
+    "year": 2014,
+    "keyword": "RD 413/2014",
+    "title": "Royal Decree 413/2014",
+    "impact": "Replaced prior support rules with a new remuneration framework."
+  },
+  {
+    "code": "CHE",
+    "country": "Switzerland",
+    "year": 2011,
+    "keyword": "Nuclear Exit Decision",
+    "title": "Federal Council Nuclear Phase-out Decision",
+    "impact": "Redirected long-term planning toward efficiency and non-nuclear renewables."
+  },
+  {
+    "code": "CHE",
+    "country": "Switzerland",
+    "year": 2017,
+    "keyword": "Energy Strategy 2050",
+    "title": "Swiss Energy Act Referendum",
+    "impact": "Voters approved a strategy promoting renewables and limiting new nuclear builds."
+  },
+  {
+    "code": "FIN",
+    "country": "Finland",
+    "year": 1990,
+    "keyword": "Carbon Tax 1990",
+    "title": "Finnish Carbon Tax Introduction",
+    "impact": "One of the earliest national carbon taxes, shaping long-term fuel choices."
+  },
+  {
+    "code": "FIN",
+    "country": "Finland",
+    "year": 2019,
+    "keyword": "Coal Ban Act",
+    "title": "Act Banning Coal in Energy Use",
+    "impact": "Set a legal end-point for coal use in energy production."
+  },
+  {
+    "code": "IRL",
+    "country": "Ireland",
+    "year": 2015,
+    "keyword": "Climate Act 2015",
+    "title": "Climate Action and Low Carbon Development Act",
+    "impact": "Created a statutory framework for national low-carbon transition planning."
+  },
+  {
+    "code": "IRL",
+    "country": "Ireland",
+    "year": 2019,
+    "keyword": "Climate Plan 2019",
+    "title": "Climate Action Plan 2019",
+    "impact": "Defined sector-by-sector measures for electricity, transport, and buildings."
+  },
+  {
+    "code": "NZL",
+    "country": "New Zealand",
+    "year": 2008,
+    "keyword": "NZ ETS",
+    "title": "Climate Change Response (Emissions Trading) Amendment Act",
+    "impact": "Established New Zealand's emissions trading framework across key sectors."
+  },
+  {
+    "code": "NZL",
+    "country": "New Zealand",
+    "year": 2019,
+    "keyword": "Zero Carbon Act",
+    "title": "Climate Change Response (Zero Carbon) Amendment Act",
+    "impact": "Set a net-zero framework and formalized long-term climate governance."
+  },
+  {
+    "code": "BEL",
+    "country": "Belgium",
+    "year": 2003,
+    "keyword": "Nuclear Phase-out Law",
+    "title": "Belgian Nuclear Phase-out Act",
+    "impact": "Established legal timelines that shaped long-run generation planning."
+  },
+  {
+    "code": "AUT",
+    "country": "Austria",
+    "year": 2002,
+    "keyword": "Green Electricity Act",
+    "title": "Austrian Green Electricity Act",
+    "impact": "Supported renewable generation through tariff-based mechanisms."
+  }
+]

@@ -51,7 +51,7 @@
     <section id="description">
       <div class="desc-intro reveal">
         <h2>About</h2>
-        <p>An interactive visualization of global energy trends from 1960 to 2020, powered by World Bank data covering 200+ countries. Explore how the world's electricity mix has shifted from fossil fuels toward renewable sources.</p>
+        <p>An interactive visualization of global energy trends from 1960 to 2019, powered by World Bank data covering 200+ countries. Explore how the world's electricity mix has shifted from fossil fuels toward renewable sources.</p>
       </div>
       <div class="desc-how reveal" style="transition-delay: 0.1s">
         <h2>How to Use</h2>
@@ -59,7 +59,7 @@
           <li><strong>Map:</strong> Hover for details, click to select a country.</li>
           <li><strong>Timeline:</strong> Drag the slider or press Play to animate.</li>
           <li><strong>Chart:</strong> View the selected country's electricity source breakdown.</li>
-          <li><strong>Compare:</strong> Click multiple countries (up to 6) to see sparkline trends.</li>
+          <li><strong>Compare:</strong> Click multiple countries (up to 6) to see overlay trend lines.</li>
           <li><strong>Filters:</strong> Switch metrics or filter by region using the dropdowns.</li>
         </ul>
       </div>
@@ -95,8 +95,37 @@
     <div id="year-display">
       <span id="year-label">2000</span>
     </div>
-    <div id="slider-container">
-      <input type="range" id="year-slider" min="1960" max="2019" value="2000" step="1">
+    <div id="timeline-section" class="reveal">
+      <svg id="timeline-chart"></svg>
+      <div id="slider-container">
+        <input type="range" id="year-slider" min="1960" max="2019" value="2000" step="1">
+      </div>
+    </div>
+
+    <div id="insight-bar" class="reveal">
+      <div class="insight-item">
+        <span class="insight-icon">&#127758;</span>
+        <span id="insight-countries" class="insight-val">—</span>
+        <span class="insight-label">countries &gt;50% renewable</span>
+      </div>
+      <div class="insight-divider"></div>
+      <div class="insight-item">
+        <span class="insight-icon">&#9981;</span>
+        <span id="insight-avg-fossil" class="insight-val">—</span>
+        <span class="insight-label">global avg fossil fuel</span>
+      </div>
+      <div class="insight-divider"></div>
+      <div class="insight-item">
+        <span class="insight-icon">&#9889;</span>
+        <span id="insight-top" class="insight-val">—</span>
+        <span class="insight-label">highest renewable</span>
+      </div>
+      <div class="insight-divider"></div>
+      <div class="insight-item">
+        <span class="insight-icon">&#128200;</span>
+        <span id="insight-access" class="insight-val">—</span>
+        <span class="insight-label">global avg electricity access</span>
+      </div>
     </div>
 
     <div id="main-content" class="reveal">
@@ -114,12 +143,19 @@
     </div>
 
     <div id="comparison-section" class="reveal">
-      <h3>Country Comparison <span id="comparison-hint">(Click countries on the map to compare, max 6)</span></h3>
-      <div id="sparklines"></div>
+      <div class="comparison-header">
+        <h3>Country Comparison</h3>
+        <span id="comparison-hint">Click countries on the map to compare (max 6)</span>
+        <button id="clear-compare-btn" style="display:none">Clear All</button>
+      </div>
+      <div id="compare-chart-container">
+        <svg id="compare-chart"></svg>
+      </div>
+      <div id="compare-legend"></div>
     </div>
 
     <footer id="attribution" class="reveal">
-      <p>Data: <a href="https://datacatalog.worldbank.org/" target="_blank">World Bank Open Data</a> — Energy &amp; Mining Indicators (1960–2020)</p>
+      <p>Data: <a href="https://datacatalog.worldbank.org/" target="_blank">World Bank Open Data</a> — Energy &amp; Mining Indicators (1960–2019)</p>
       <p>Built with <a href="https://d3js.org/" target="_blank">D3.js</a> &amp; <a href="https://github.com/topojson/topojson" target="_blank">TopoJSON</a> | CSC316 Assignment 3</p>
     </footer>
 
