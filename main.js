@@ -130,7 +130,7 @@
       .datum(d3.geoGraticule10())
       .attr("d", pathGen)
       .attr("fill", "none")
-      .attr("stroke", "#1e3245")
+      .attr("stroke", "#c5cdd5")
       .attr("stroke-width", 0.4);
 
     mapG = mapSvg.append("g");
@@ -143,7 +143,7 @@
       .join("path")
       .attr("class", "country-path")
       .attr("d", pathGen)
-      .attr("fill", "#1a2733")
+      .attr("fill", "#dde3e9")
       .on("mouseover", onCountryHover)
       .on("mousemove", onCountryMove)
       .on("mouseout", onCountryOut)
@@ -199,7 +199,7 @@
       .attr("fill", function (d) {
         const alpha3 = ISO_NUM_TO_ALPHA3[d.id];
         const rec = dataMap[alpha3];
-        if (!rec || rec[currentMetric] == null) return "#1a2733";
+        if (!rec || rec[currentMetric] == null) return "#dde3e9";
         return colorScale(rec[currentMetric]);
       });
 

@@ -8,8 +8,8 @@
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: #0b1117;
-  color: #c9d1d9;
+  background: #f5f6f8;
+  color: #1f2328;
   min-height: 100vh;
 }
 
@@ -23,43 +23,72 @@ body {
 header {
   text-align: center;
   margin-bottom: 12px;
-  padding-bottom: 16px;
 }
 
 header h1 {
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 800;
-  background: linear-gradient(135deg, #58a6ff, #3fb950);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #1f2328;
   letter-spacing: -0.5px;
 }
 
 .subtitle {
-  font-size: 15px;
-  color: #6e7681;
-  margin-top: 6px;
-  font-weight: 400;
+  font-size: 14px;
+  color: #656d76;
+  margin-top: 4px;
 }
 
 /* Description */
 #description {
-  background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
-  border: 1px solid #21262d;
-  border-radius: 12px;
-  padding: 20px 28px;
+  display: flex;
+  gap: 24px;
   margin-bottom: 28px;
 }
 
-#description p {
+#description > div {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #d8dee4;
+  border-radius: 12px;
+  padding: 18px 22px;
+}
+
+#description h2 {
   font-size: 14px;
-  line-height: 1.75;
-  color: #8b949e;
+  font-weight: 700;
+  color: #1f2328;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+#description p {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #656d76;
+}
+
+#description ul {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #656d76;
+  padding-left: 18px;
+  list-style: none;
+}
+
+#description li {
+  margin-bottom: 3px;
+  position: relative;
+  padding-left: 4px;
+}
+
+#description li::before {
+  content: '';
+  display: none;
 }
 
 #description strong {
-  color: #c9d1d9;
+  color: #1f2328;
   font-weight: 600;
 }
 
@@ -70,11 +99,11 @@ header h1 {
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  margin-bottom: 20px;
-  padding: 12px 20px;
-  background: #161b22;
-  border: 1px solid #21262d;
-  border-radius: 12px;
+  margin-bottom: 16px;
+  padding: 10px 20px;
+  background: #fff;
+  border: 1px solid #d8dee4;
+  border-radius: 10px;
 }
 
 .control-group {
@@ -85,19 +114,19 @@ header h1 {
 
 .control-group label {
   font-size: 12px;
-  font-weight: 500;
-  color: #6e7681;
+  font-weight: 600;
+  color: #656d76;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   white-space: nowrap;
 }
 
 select {
-  background: #0d1117;
-  color: #c9d1d9;
-  border: 1px solid #30363d;
+  background: #f5f6f8;
+  color: #1f2328;
+  border: 1px solid #d0d7de;
   border-radius: 8px;
-  padding: 7px 14px;
+  padding: 6px 12px;
   font-size: 13px;
   font-family: inherit;
   cursor: pointer;
@@ -107,52 +136,44 @@ select {
 
 select:hover,
 select:focus {
-  border-color: #58a6ff;
+  border-color: #0969da;
 }
 
 #play-btn {
-  background: #238636;
+  background: #2da44e;
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 7px 20px;
+  padding: 6px 20px;
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
+  transition: background 0.2s;
 }
 
 #play-btn:hover {
-  background: #2ea043;
-  transform: translateY(-1px);
-}
-
-#play-btn:active {
-  transform: translateY(0);
+  background: #1a7f37;
 }
 
 #play-btn.playing {
-  background: #da3633;
+  background: #cf222e;
 }
 
 #play-btn.playing:hover {
-  background: #f85149;
+  background: #a40e26;
 }
 
 /* Year slider */
 #year-display {
   text-align: center;
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 #year-label {
-  font-size: 56px;
+  font-size: 52px;
   font-weight: 800;
-  background: linear-gradient(135deg, #58a6ff, #3fb950);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #0969da;
   font-variant-numeric: tabular-nums;
   letter-spacing: -2px;
 }
@@ -169,7 +190,7 @@ select:focus {
   width: 80%;
   max-width: 800px;
   height: 4px;
-  background: #21262d;
+  background: #d0d7de;
   border-radius: 4px;
   cursor: pointer;
   outline: none;
@@ -181,10 +202,10 @@ select:focus {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #58a6ff;
-  border: 3px solid #0b1117;
+  background: #0969da;
+  border: 3px solid #fff;
   cursor: pointer;
-  box-shadow: 0 0 8px rgba(88, 166, 255, 0.4);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
   transition: transform 0.15s;
 }
 
@@ -196,8 +217,8 @@ select:focus {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #58a6ff;
-  border: 3px solid #0b1117;
+  background: #0969da;
+  border: 3px solid #fff;
   cursor: pointer;
 }
 
@@ -214,11 +235,10 @@ select:focus {
 }
 
 #map-container {
-  background: #0d1117;
+  background: #e8edf2;
   border-radius: 12px;
-  border: 1px solid #21262d;
+  border: 1px solid #d8dee4;
   overflow: hidden;
-  position: relative;
 }
 
 #map-svg {
@@ -227,14 +247,14 @@ select:focus {
 }
 
 #legend-container {
-  margin-top: 10px;
+  margin-top: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   font-size: 11px;
   font-weight: 500;
-  color: #6e7681;
+  color: #656d76;
 }
 
 #legend-container svg {
@@ -244,9 +264,9 @@ select:focus {
 #chart-panel {
   flex: 0.8;
   min-width: 320px;
-  background: #0d1117;
+  background: #fff;
   border-radius: 12px;
-  border: 1px solid #21262d;
+  border: 1px solid #d8dee4;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -255,7 +275,7 @@ select:focus {
 #chart-title {
   font-size: 14px;
   font-weight: 600;
-  color: #8b949e;
+  color: #656d76;
   margin-bottom: 12px;
   text-align: center;
 }
@@ -268,30 +288,30 @@ select:focus {
 #annotation-box {
   margin-top: 10px;
   font-size: 12px;
-  color: #6e7681;
+  color: #656d76;
   line-height: 1.6;
   min-height: 40px;
 }
 
 /* Comparison sparklines */
 #comparison-section {
-  background: #0d1117;
+  background: #fff;
   border-radius: 12px;
-  border: 1px solid #21262d;
+  border: 1px solid #d8dee4;
   padding: 20px;
 }
 
 #comparison-section h3 {
   font-size: 14px;
   font-weight: 600;
-  color: #c9d1d9;
+  color: #1f2328;
   margin-bottom: 14px;
 }
 
 #comparison-hint {
   font-size: 12px;
   font-weight: 400;
-  color: #484f58;
+  color: #8c959f;
 }
 
 #sparklines {
@@ -301,8 +321,8 @@ select:focus {
 }
 
 .spark-card {
-  background: #161b22;
-  border: 1px solid #21262d;
+  background: #f5f6f8;
+  border: 1px solid #d8dee4;
   border-radius: 10px;
   padding: 12px 16px;
   min-width: 200px;
@@ -313,19 +333,19 @@ select:focus {
 }
 
 .spark-card:hover {
-  border-color: #30363d;
+  border-color: #0969da;
 }
 
 .spark-card .spark-title {
   font-size: 13px;
   font-weight: 600;
-  color: #c9d1d9;
+  color: #1f2328;
   margin-bottom: 4px;
 }
 
 .spark-card .spark-value {
   font-size: 11px;
-  color: #58a6ff;
+  color: #0969da;
   margin-bottom: 6px;
 }
 
@@ -335,38 +355,37 @@ select:focus {
   right: 10px;
   background: none;
   border: none;
-  color: #484f58;
+  color: #8c959f;
   cursor: pointer;
   font-size: 14px;
   transition: color 0.15s;
 }
 
 .spark-card .remove-btn:hover {
-  color: #f85149;
+  color: #cf222e;
 }
 
 /* Tooltip */
 #tooltip {
   position: fixed;
   pointer-events: none;
-  background: rgba(13, 17, 23, 0.96);
-  border: 1px solid #30363d;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid #d0d7de;
   border-radius: 10px;
   padding: 12px 16px;
   font-size: 12px;
   line-height: 1.6;
-  color: #c9d1d9;
+  color: #1f2328;
   display: none;
   z-index: 1000;
   max-width: 260px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 #tooltip .tt-title {
   font-weight: 700;
   font-size: 14px;
-  color: #58a6ff;
+  color: #0969da;
   margin-bottom: 6px;
 }
 
@@ -377,29 +396,29 @@ select:focus {
 }
 
 #tooltip .tt-label {
-  color: #6e7681;
+  color: #656d76;
 }
 
 #tooltip .tt-val {
   font-weight: 600;
-  color: #c9d1d9;
+  color: #1f2328;
 }
 
 /* Country paths */
 .country-path {
-  stroke: #0d1117;
+  stroke: #c5cdd5;
   stroke-width: 0.5;
   cursor: pointer;
   transition: stroke-width 0.15s, stroke 0.15s;
 }
 
 .country-path:hover {
-  stroke: #c9d1d9;
+  stroke: #1f2328;
   stroke-width: 1.5;
 }
 
 .country-path.selected {
-  stroke: #f0e68c;
+  stroke: #cf222e;
   stroke-width: 2;
 }
 
@@ -414,30 +433,30 @@ select:focus {
 }
 
 .chart-axis text {
-  fill: #6e7681;
+  fill: #656d76;
   font-size: 11px;
 }
 
 .chart-axis line,
 .chart-axis path {
-  stroke: #21262d;
+  stroke: #d0d7de;
 }
 
 .year-indicator {
-  stroke: #f0e68c;
+  stroke: #cf222e;
   stroke-width: 1.5;
   stroke-dasharray: 4 3;
 }
 
 /* Annotations */
 .annotation-line {
-  stroke: #484f58;
+  stroke: #8c959f;
   stroke-width: 1;
   stroke-dasharray: 3 2;
 }
 
 .annotation-label {
-  fill: #6e7681;
+  fill: #656d76;
   font-size: 9px;
 }
 
@@ -446,6 +465,9 @@ select:focus {
   #app {
     padding: 20px 16px;
   }
+  #description {
+    flex-direction: column;
+  }
   #main-content {
     flex-direction: column;
   }
@@ -453,9 +475,9 @@ select:focus {
     min-width: unset;
   }
   header h1 {
-    font-size: 24px;
+    font-size: 22px;
   }
   #year-label {
-    font-size: 40px;
+    font-size: 36px;
   }
 }
