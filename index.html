@@ -15,6 +15,51 @@
       <p class="subtitle">Explore how the world's electricity sources have shifted from 1960 to 2020</p>
     </header>
 
+    <section id="description">
+      <div class="desc-block">
+        <h2>Project Overview</h2>
+        <p>
+          This interactive visualization explores the <strong>global energy transition</strong> from 1960 to 2020, using data from the <strong>World Bank's Energy &amp; Mining indicators</strong>. The dataset includes metrics such as fossil fuel and renewable energy consumption, electricity access, electricity production by source (coal, oil, natural gas, nuclear, hydroelectric, and other renewables), and energy use per capita — spanning over 200 countries across six decades.
+        </p>
+        <p>
+          The goal is to help readers understand <strong>how and where the world's electricity mix has shifted over time</strong>, identify regional patterns in the energy transition, and compare individual countries' progress toward cleaner energy. As climate change accelerates, understanding these trends is critical for evaluating policy effectiveness and guiding future energy decisions.
+        </p>
+      </div>
+
+      <div class="desc-block">
+        <h2>Prototype Demonstration</h2>
+        <ul>
+          <li><strong>Choropleth Map:</strong> Displays a selected energy metric across all countries for a given year. Hover over a country to see a detailed tooltip; click to drill down.</li>
+          <li><strong>Year Slider &amp; Animation:</strong> Scrub through 1960–2020 or press <em>Play</em> to animate the map over time, revealing how global patterns evolve.</li>
+          <li><strong>Stacked Area Chart:</strong> Click any country to see a breakdown of its electricity production sources over time, with key historical events annotated (e.g., 1973 Oil Crisis, Paris Agreement).</li>
+          <li><strong>Country Comparison Sparklines:</strong> Click up to 6 countries to compare their trends side by side with small multiples.</li>
+          <li><strong>Region Filter &amp; Metric Selector:</strong> Filter the map by world region and switch between five different energy metrics.</li>
+        </ul>
+      </div>
+
+      <div class="desc-block">
+        <h2>Key Design Decisions</h2>
+        <ul>
+          <li><strong>Choropleth + stacked area (overview + detail):</strong> The map provides a global overview for spatial comparison, while the stacked area chart offers a deep temporal breakdown for a selected country — following Shneiderman's mantra of "overview first, zoom and filter, then details on demand."</li>
+          <li><strong>Sequential color scales per metric:</strong> Fossil fuel uses an Orange-Red scale to intuitively convey "heat/carbon intensity," while renewable metrics use a Green-Blue scale to suggest clean energy. This makes polarity immediately legible.</li>
+          <li><strong>Animated timeline:</strong> The play button enables animation to reveal temporal trends that static snapshots miss — e.g., the rapid spread of electricity access across Sub-Saharan Africa after 2000.</li>
+          <li><strong>Historical annotations:</strong> Marking events like the Oil Crises and Paris Agreement connects data patterns to real-world causes, helping readers build causal understanding rather than just observing numbers.</li>
+          <li><strong>Sparkline comparison:</strong> Small multiples allow quick, space-efficient comparison without leaving the main view. This was chosen over overlaid line charts to avoid clutter when comparing diverse countries.</li>
+          <li><strong>Alternatives considered:</strong> We explored a bubble chart (energy per capita vs. renewable %) and a Sankey diagram (energy flow by source). The choropleth was chosen for its immediacy in showing geographic patterns, which is central to the energy transition story.</li>
+        </ul>
+      </div>
+
+      <div class="desc-block">
+        <h2>Questions for Peer Review</h2>
+        <ol>
+          <li>Is the relationship between the map and the stacked area chart intuitive, or would additional visual cues (e.g., highlighting, linking animations) help?</li>
+          <li>Are the color scales effective for distinguishing high vs. low values, especially for colorblind users? Should we add a secondary encoding (e.g., texture or pattern)?</li>
+          <li>Would adding a second linked chart (e.g., a scatterplot of GDP vs. renewable adoption) provide meaningful additional insight, or would it add too much complexity?</li>
+          <li>Is the sparkline comparison section useful as-is, or would a more structured side-by-side layout (e.g., aligned axes) be more effective for comparison?</li>
+        </ol>
+      </div>
+    </section>
+
     <div id="controls">
       <div class="control-group">
         <label for="metric-select">Map Metric:</label>
