@@ -9,18 +9,51 @@
   <script src="https://d3js.org/topojson.v3.min.js"></script>
 </head>
 <body>
+
+  <!-- ===== HERO LANDING ===== -->
+  <section id="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div id="hero-content">
+      <p class="hero-tag">Interactive Data Visualization</p>
+      <h1 class="hero-title">
+        <span class="hero-line">Global Energy</span>
+        <span class="hero-line">Transition Explorer</span>
+      </h1>
+      <p class="hero-sub">How the world's electricity sources shifted across 200+ countries over 60 years</p>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="stat-num" data-target="200">0</span><span class="stat-plus">+</span>
+          <span class="stat-label">Countries</span>
+        </div>
+        <div class="hero-stat">
+          <span class="stat-num" data-target="60">0</span>
+          <span class="stat-label">Years of Data</span>
+        </div>
+        <div class="hero-stat">
+          <span class="stat-num" data-target="6">0</span>
+          <span class="stat-label">Energy Sources</span>
+        </div>
+      </div>
+      <button id="hero-cta">Explore the Data</button>
+    </div>
+    <div class="scroll-hint">
+      <div class="scroll-arrow"></div>
+    </div>
+  </section>
+
+  <!-- ===== MAIN APP ===== -->
   <div id="app">
-    <header>
+    <header class="reveal">
       <h1>Global Energy Transition Explorer</h1>
-      <p class="subtitle">Explore how the world's electricity sources have shifted from 1960 to 2020</p>
+      <p class="subtitle">Explore how the world's electricity sources have shifted from 1960 to 2019</p>
     </header>
 
     <section id="description">
-      <div class="desc-intro">
+      <div class="desc-intro reveal">
         <h2>About</h2>
         <p>An interactive visualization of global energy trends from 1960 to 2020, powered by World Bank data covering 200+ countries. Explore how the world's electricity mix has shifted from fossil fuels toward renewable sources.</p>
       </div>
-      <div class="desc-how">
+      <div class="desc-how reveal" style="transition-delay: 0.1s">
         <h2>How to Use</h2>
         <ul>
           <li><strong>Map:</strong> Hover for details, click to select a country.</li>
@@ -30,13 +63,13 @@
           <li><strong>Filters:</strong> Switch metrics or filter by region using the dropdowns.</li>
         </ul>
       </div>
-      <div class="desc-design">
+      <div class="desc-design reveal" style="transition-delay: 0.2s">
         <h2>Design</h2>
         <p>A choropleth map provides geographic overview while stacked area charts offer temporal detail — following an overview-first, details-on-demand pattern. Warm color scales encode fossil fuel intensity; cool tones represent renewables. Key historical events (Oil Crises, Paris Agreement) are annotated to provide context.</p>
       </div>
     </section>
 
-    <div id="controls">
+    <div id="controls" class="reveal">
       <div class="control-group">
         <label for="metric-select">Map Metric:</label>
         <select id="metric-select">
@@ -55,6 +88,7 @@
       </div>
       <div class="control-group play-group">
         <button id="play-btn">&#9654; Play</button>
+        <button id="speed-btn" title="Playback speed">1x</button>
       </div>
     </div>
 
@@ -62,32 +96,38 @@
       <span id="year-label">2000</span>
     </div>
     <div id="slider-container">
-      <input type="range" id="year-slider" min="1960" max="2020" value="2000" step="1">
+      <input type="range" id="year-slider" min="1960" max="2019" value="2000" step="1">
     </div>
 
-    <div id="main-content">
+    <div id="main-content" class="reveal">
       <div id="map-panel">
         <div id="map-container">
           <svg id="map-svg"></svg>
         </div>
         <div id="legend-container"></div>
       </div>
-      <div id="chart-panel">
+      <div id="chart-panel" class="tilt-card">
         <h3 id="chart-title">Select a country on the map</h3>
         <svg id="stack-chart"></svg>
         <div id="annotation-box"></div>
       </div>
     </div>
 
-    <div id="comparison-section">
+    <div id="comparison-section" class="reveal">
       <h3>Country Comparison <span id="comparison-hint">(Click countries on the map to compare, max 6)</span></h3>
       <div id="sparklines"></div>
     </div>
+
+    <footer id="attribution" class="reveal">
+      <p>Data: <a href="https://datacatalog.worldbank.org/" target="_blank">World Bank Open Data</a> — Energy &amp; Mining Indicators (1960–2020)</p>
+      <p>Built with <a href="https://d3js.org/" target="_blank">D3.js</a> &amp; <a href="https://github.com/topojson/topojson" target="_blank">TopoJSON</a> | CSC316 Assignment 3</p>
+    </footer>
 
     <div id="tooltip"></div>
   </div>
 
   <script src="iso_codes.js"></script>
   <script src="main.js"></script>
+  <script src="hero.js"></script>
 </body>
 </html>
