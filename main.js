@@ -7,9 +7,12 @@
 
   // --- State ---
   let allData = [];
+  let dataByCode = new Map();
   let worldTopo = null;
+  let worldCountries = [];
   let allEvents = [];
   let eventsByCode = new Map();
+  let shockLensState = null;
   let currentYear = 2000;
   let currentMetric = "fossil_fuel_pct";
   let currentRegion = "all";
@@ -21,6 +24,7 @@
   const SPEED_OPTIONS = [1, 2, 4, 8];
   let speedIndex = 0;
   let playSpeed = SPEED_OPTIONS[0];
+  const SHOCK_WINDOW_YEARS = 5;
 
   const ENERGY_SOURCES = [
     { key: "elec_coal", label: "Coal", color: "#5d4037" },
@@ -144,8 +148,18 @@
   }
 
   // --- Helpers ---
+  function buildDataIndex(rows) {
+    dataByCode = new Map();
+    rows.forEach((d) => {
+      if (!d || !d.code) return;
+      if (!dataByCode.has(d.code)) dataByCode.set(d.code, []);
+      dataByCode.get(d.code).push(d);
+    });
+    dataByCode.forEach((list) => list.sort((a, b) => a.year - b.year));
+  }
+
   function getCountryData(code) {
-    return allData.filter((d) => d.code === code);
+    return dataByCode.get(code) || [];
   }
 
   function getYearData(year) {
@@ -153,14 +167,22 @@
   }
 
   function getCountryYearData(code, year) {
-    return allData.find((d) => d.code === code && d.year === year);
+    return getCountryData(code).find((d) => d.year === year) || null;
   }
 
   function closestYearData(code, year) {
     const cdata = getCountryData(code);
     if (!cdata.length) return null;
-    cdata.sort((a, b) => Math.abs(a.year - year) - Math.abs(b.year - year));
-    return cdata[0];
+    let best = cdata[0];
+    let bestGap = Math.abs(best.year - year);
+    for (let i = 1; i < cdata.length; i++) {
+      const gap = Math.abs(cdata[i].year - year);
+      if (gap < bestGap) {
+        best = cdata[i];
+        bestGap = gap;
+      }
+    }
+    return best;
   }
 
   function passesRegionFilter(rec) {
@@ -216,6 +238,100 @@
 
   function getNearbyCountryEvents(code, year, windowYears = 3) {
     return getCountryEvents(code).filter((evt) => Math.abs(evt.year - year) <= windowYears);
+  }
+
+  function meanMetricInRange(series, key, startYear, endYear) {
+    const vals = series
+      .filter((d) => d.year >= startYear && d.year <= endYear && d[key] != null)
+      .map((d) => +d[key]);
+    if (!vals.length) return null;
+    return d3.mean(vals);
+  }
+
+  function computeMetricWindowStats(series, key, beforeStart, beforeEnd, afterStart, afterEnd) {
+    const before = meanMetricInRange(series, key, beforeStart, beforeEnd);
+    const after = meanMetricInRange(series, key, afterStart, afterEnd);
+    const delta = before == null || after == null ? null : after - before;
+    return { before, after, delta };
+  }
+
+  function meanMetricForRegionRange(region, key, startYear, endYear) {
+    if (!region) return null;
+    const vals = allData
+      .filter((d) => d.region === region && d.year >= startYear && d.year <= endYear && d[key] != null)
+      .map((d) => +d[key]);
+    if (!vals.length) return null;
+    return d3.mean(vals);
+  }
+
+  function computeRegionMetricWindowStats(region, key, beforeStart, beforeEnd, afterStart, afterEnd) {
+    const before = meanMetricForRegionRange(region, key, beforeStart, beforeEnd);
+    const after = meanMetricForRegionRange(region, key, afterStart, afterEnd);
+    const delta = before == null || after == null ? null : after - before;
+    return { before, after, delta };
+  }
+
+  function formatSignedPP(v) {
+    if (v == null || !Number.isFinite(v)) return "N/A";
+    const sign = v > 0 ? "+" : "";
+    return `${sign}${v.toFixed(1)} pp`;
+  }
+
+  function formatPercent(v) {
+    if (v == null || !Number.isFinite(v)) return "N/A";
+    return `${v.toFixed(1)}%`;
+  }
+
+  function buildPolicyShockLensState(code, countryName, event, windowYears = SHOCK_WINDOW_YEARS) {
+    if (!event || event.year == null) return null;
+
+    const eventYear = +event.year;
+    const beforeStart = Math.max(1960, eventYear - windowYears);
+    const beforeEnd = Math.max(1960, eventYear - 1);
+    const afterStart = Math.min(2019, eventYear + 1);
+    const afterEnd = Math.min(2019, eventYear + windowYears);
+    const selectedAtEvent = closestYearData(code, eventYear);
+    const regionName = selectedAtEvent ? selectedAtEvent.region : "";
+
+    const selectedSeries = getCountryData(code);
+    const selectedRenew = computeMetricWindowStats(selectedSeries, "renewable_pct", beforeStart, beforeEnd, afterStart, afterEnd);
+    const selectedFossil = computeMetricWindowStats(selectedSeries, "fossil_fuel_pct", beforeStart, beforeEnd, afterStart, afterEnd);
+    const focus = {
+      country: countryName || code,
+      renewBefore: selectedRenew.before,
+      renewAfter: selectedRenew.after,
+      deltaRenew: selectedRenew.delta,
+      fossilBefore: selectedFossil.before,
+      fossilAfter: selectedFossil.after,
+      deltaFossil: selectedFossil.delta,
+    };
+
+    const regionRenew = computeRegionMetricWindowStats(regionName, "renewable_pct", beforeStart, beforeEnd, afterStart, afterEnd);
+    const regionFossil = computeRegionMetricWindowStats(regionName, "fossil_fuel_pct", beforeStart, beforeEnd, afterStart, afterEnd);
+    const regionFocus = {
+      renewBefore: regionRenew.before,
+      renewAfter: regionRenew.after,
+      deltaRenew: regionRenew.delta,
+      fossilBefore: regionFossil.before,
+      fossilAfter: regionFossil.after,
+      deltaFossil: regionFossil.delta,
+    };
+
+    return {
+      code,
+      country: countryName || (selectedAtEvent && selectedAtEvent.country) || (focus && focus.country) || code,
+      region: regionName || "",
+      eventYear,
+      eventKeyword: event.keyword || "Energy Event",
+      eventTitle: event.title || "",
+      eventImpact: event.impact || "",
+      beforeStart,
+      beforeEnd,
+      afterStart,
+      afterEnd,
+      focus,
+      regionFocus,
+    };
   }
 
   const TRANSITION_METRICS = [
@@ -359,6 +475,252 @@
     return `${d3.format(",.0f")(magnitude)} ${transition.unit}`;
   }
 
+  function setShockLensVisibility(active) {
+    const panel = document.getElementById("shock-lens-panel");
+    if (!panel) return;
+    panel.classList.toggle("active", !!active);
+  }
+
+  function shockMetricClass(delta, betterDirection = "up") {
+    if (delta == null || !Number.isFinite(delta) || Math.abs(delta) < 0.05) return "flat";
+    if (betterDirection === "down") return delta <= 0 ? "up" : "down";
+    return delta >= 0 ? "up" : "down";
+  }
+
+  function shockMetricWidth(delta, maxAbsDelta) {
+    if (delta == null || !Number.isFinite(delta)) return 0;
+    if (!maxAbsDelta || maxAbsDelta <= 0) return 0;
+    return Math.max(6, Math.min(100, (Math.abs(delta) / maxAbsDelta) * 100));
+  }
+
+  function renderShockMetricRow(label, before, after, delta, betterDirection, maxAbsDelta) {
+    const cls = shockMetricClass(delta, betterDirection);
+    const width = shockMetricWidth(delta, maxAbsDelta);
+    return `<div class="shock-metric-row">
+      <div class="shock-metric-head">
+        <span class="shock-metric-label">${label}</span>
+        <span class="shock-metric-delta ${cls}">${formatSignedPP(delta)}</span>
+      </div>
+      <div class="shock-metric-range">${formatPercent(before)} → ${formatPercent(after)}</div>
+      <div class="shock-metric-track">
+        <span class="shock-metric-fill ${cls}" style="width:${width.toFixed(1)}%"></span>
+      </div>
+    </div>`;
+  }
+
+  function updatePolicyShockLensPanel() {
+    if (!shockLensState) {
+      setShockLensVisibility(false);
+      return;
+    }
+
+    const f = shockLensState.focus || {};
+    const r = shockLensState.regionFocus || {};
+    const maxAbsDelta = Math.max(
+      2,
+      d3.max([
+        Math.abs(f.deltaRenew || 0),
+        Math.abs(f.deltaFossil || 0),
+        Math.abs(r.deltaRenew || 0),
+        Math.abs(r.deltaFossil || 0),
+      ]) || 0
+    );
+
+    const windowText = `${shockLensState.eventYear} event • before ${shockLensState.beforeStart}-${shockLensState.beforeEnd} vs after ${shockLensState.afterStart}-${shockLensState.afterEnd}`;
+    const titleText = `${shockLensState.country} — ${shockLensState.eventKeyword}`;
+
+    d3.select("#shock-lens-title").text(titleText);
+    d3.select("#shock-lens-window").text(windowText);
+    d3.select("#shock-region-title").text(shockLensState.region ? `${shockLensState.region} Region Average` : "Region Context");
+
+    const countryHtml =
+      renderShockMetricRow("Renewable", f.renewBefore, f.renewAfter, f.deltaRenew, "up", maxAbsDelta)
+      + renderShockMetricRow("Fossil Fuel", f.fossilBefore, f.fossilAfter, f.deltaFossil, "down", maxAbsDelta);
+    const regionHtml =
+      renderShockMetricRow("Renewable", r.renewBefore, r.renewAfter, r.deltaRenew, "up", maxAbsDelta)
+      + renderShockMetricRow("Fossil Fuel", r.fossilBefore, r.fossilAfter, r.deltaFossil, "down", maxAbsDelta);
+
+    d3.select("#shock-country-summary").html(countryHtml);
+    d3.select("#shock-region-summary").html(regionHtml);
+
+    setShockLensVisibility(true);
+  }
+
+  function activatePolicyShockLens(code, countryName, event) {
+    const nextState = buildPolicyShockLensState(code, countryName, event);
+    if (!nextState) return;
+
+    shockLensState = nextState;
+    if (playing) togglePlay();
+
+    currentYear = nextState.eventYear;
+    d3.select("#year-slider").property("value", currentYear);
+    d3.select("#year-label").text(currentYear);
+    updateAmbientBackground();
+    onYearChange();
+    updatePolicyShockLensPanel();
+    updateShockNav();
+  }
+
+  function clearPolicyShockLens(redrawChart = true) {
+    const hadLens = !!shockLensState;
+    shockLensState = null;
+    setShockLensVisibility(false);
+    d3.select("#shock-country-summary").html("");
+    d3.select("#shock-region-summary").html("");
+    d3.select("#shock-region-title").text("Region Context");
+
+    if (hadLens && redrawChart && selectedCountry) {
+      const rec = closestYearData(selectedCountry, currentYear);
+      if (rec) drawStackedArea(selectedCountry, rec.country);
+    }
+    updateShockNav();
+  }
+
+  function closestEventToYear(events, year) {
+    if (!events.length) return null;
+    let best = events[0];
+    let bestGap = Math.abs(best.year - year);
+    for (let i = 1; i < events.length; i++) {
+      const gap = Math.abs(events[i].year - year);
+      if (gap < bestGap) {
+        best = events[i];
+        bestGap = gap;
+      }
+    }
+    return best;
+  }
+
+  function getSelectedShockNavEvent() {
+    if (!selectedCountry) return null;
+    const events = getCountryEvents(selectedCountry);
+    if (!events.length) return null;
+
+    const selectEl = document.getElementById("shock-event-select");
+    const selectedYear = selectEl ? +selectEl.value : NaN;
+    const match = events.find((evt) => evt.year === selectedYear);
+    return match || closestEventToYear(events, currentYear);
+  }
+
+  function shiftShockNavEvent(step) {
+    const selectEl = document.getElementById("shock-event-select");
+    if (!selectEl || !selectEl.options.length) return;
+    const opts = Array.from(selectEl.options);
+    const cur = opts.findIndex((opt) => opt.value === selectEl.value);
+    const currentIndex = cur >= 0 ? cur : 0;
+    const nextIndex = Math.max(0, Math.min(opts.length - 1, currentIndex + step));
+    selectEl.value = opts[nextIndex].value;
+  }
+
+  function applyShockNavSelection() {
+    if (!selectedCountry) return;
+    const event = getSelectedShockNavEvent();
+    if (!event) return;
+
+    const rec = closestYearData(selectedCountry, currentYear);
+    activatePolicyShockLens(selectedCountry, rec ? rec.country : selectedCountry, event);
+  }
+
+  function updateShockNav() {
+    const navEl = document.getElementById("shock-nav");
+    if (!navEl) return;
+
+    const toggleEl = document.getElementById("shock-nav-enable");
+    const selectEl = document.getElementById("shock-event-select");
+    const prevBtn = document.getElementById("shock-prev-btn");
+    const nextBtn = document.getElementById("shock-next-btn");
+    const applyBtn = document.getElementById("shock-apply-btn");
+    const closeBtn = document.getElementById("shock-close-btn");
+    const countryEl = document.getElementById("shock-nav-country");
+    const hintEl = document.getElementById("shock-nav-hint");
+
+    const hasCountry = !!selectedCountry;
+    const active = !!(shockLensState && hasCountry && shockLensState.code === selectedCountry);
+
+    if (!hasCountry) {
+      navEl.classList.add("disabled");
+      if (countryEl) countryEl.textContent = "Country: —";
+      if (hintEl) hintEl.textContent = "Select a country on the map to enable event navigation.";
+      if (toggleEl) {
+        toggleEl.checked = false;
+        toggleEl.disabled = true;
+      }
+      if (selectEl) {
+        selectEl.innerHTML = "";
+        selectEl.disabled = true;
+      }
+      [prevBtn, nextBtn, applyBtn, closeBtn].forEach((btn) => {
+        if (btn) btn.disabled = true;
+      });
+      return;
+    }
+
+    const rec = closestYearData(selectedCountry, currentYear);
+    const countryName = rec ? rec.country : selectedCountry;
+    if (countryEl) countryEl.textContent = `Country: ${countryName}`;
+
+    const events = getCountryEvents(selectedCountry);
+    const hasEvents = events.length > 0;
+    navEl.classList.toggle("disabled", !hasEvents);
+    if (toggleEl) toggleEl.checked = active;
+
+    if (!hasEvents) {
+      if (hintEl) hintEl.textContent = "No catalogued events for this country yet.";
+      if (toggleEl) toggleEl.disabled = true;
+      if (selectEl) {
+        selectEl.innerHTML = "";
+        selectEl.disabled = true;
+      }
+      [prevBtn, nextBtn, applyBtn].forEach((btn) => {
+        if (btn) btn.disabled = true;
+      });
+      if (closeBtn) closeBtn.disabled = !active;
+      return;
+    }
+
+    if (toggleEl) toggleEl.disabled = false;
+    const desiredYear = active
+      ? shockLensState.eventYear
+      : (selectEl && selectEl.value ? +selectEl.value : null);
+    const defaultEvent = desiredYear != null
+      ? events.find((evt) => evt.year === desiredYear) || closestEventToYear(events, currentYear)
+      : closestEventToYear(events, currentYear);
+    const targetYear = defaultEvent ? defaultEvent.year : events[0].year;
+
+    if (selectEl) {
+      const currentValues = Array.from(selectEl.options).map((opt) => +opt.value);
+      const nextValues = events.map((evt) => evt.year);
+      const changed = currentValues.length !== nextValues.length
+        || currentValues.some((v, i) => v !== nextValues[i]);
+
+      if (changed) {
+        selectEl.innerHTML = "";
+        events.forEach((evt) => {
+          const label = `${evt.year} · ${evt.keyword || evt.title || "Energy Event"}`;
+          const opt = document.createElement("option");
+          opt.value = String(evt.year);
+          opt.textContent = label;
+          selectEl.appendChild(opt);
+        });
+      }
+      selectEl.disabled = false;
+      selectEl.value = String(targetYear);
+    }
+
+    [prevBtn, nextBtn, applyBtn].forEach((btn) => {
+      if (btn) btn.disabled = false;
+    });
+    if (closeBtn) closeBtn.disabled = !active;
+
+    if (hintEl) {
+      if (active) {
+        hintEl.textContent = `Active: ${shockLensState.eventYear} · ${shockLensState.eventKeyword}. Use Prev/Next or choose another event.`;
+      } else {
+        hintEl.textContent = "Choose an event and click Apply Lens, or enable the toggle for immediate apply.";
+      }
+    }
+  }
+
   // --- Data Loading ---
   Promise.all([
     d3.json("data/energy.json?v=" + Date.now()),
@@ -366,14 +728,10 @@
     d3.json("data/events.json?v=" + Date.now()),
   ]).then(([energy, world, events]) => {
     allData = energy;
+    buildDataIndex(allData);
     worldTopo = world;
     allEvents = Array.isArray(events) ? events : [];
     buildEventsIndex(allEvents);
-    // Debug: check data completeness
-    const y1970 = energy.filter(d => d.year === 1970);
-    const rp1970 = y1970.filter(d => d.renewable_pct != null);
-    console.log(`[DEBUG] Total records: ${energy.length}, 1970 records: ${y1970.length}, 1970 w/ renewable_pct: ${rp1970.length}`);
-    if (rp1970.length > 0) console.log("[DEBUG] Sample:", rp1970[0]);
     init();
   });
 
@@ -388,6 +746,8 @@
     drawComparisonChart();
     updateInsightBar();
     updateAmbientBackground();
+    setShockLensVisibility(false);
+    updateShockNav();
     initScrollReveal();
     initTiltCards();
   }
@@ -442,11 +802,11 @@
 
     mapG = mapSvg.append("g");
 
-    const countries = topojson.feature(worldTopo, worldTopo.objects.countries).features;
+    worldCountries = topojson.feature(worldTopo, worldTopo.objects.countries).features;
 
     mapG
       .selectAll(".country-path")
-      .data(countries)
+      .data(worldCountries)
       .join("path")
       .attr("class", "country-path")
       .attr("d", pathGen)
@@ -658,12 +1018,14 @@
 
     // Toggle selection
     if (selectedCountry === alpha3) {
+      clearPolicyShockLens(false);
       selectedCountry = null;
       d3.selectAll(".country-path").classed("selected", false).classed("dimmed", false);
       d3.select("#chart-title").text("Select a country on the map");
       d3.select("#stack-chart").selectAll("*").remove();
       d3.select("#annotation-box").html("");
     } else {
+      if (shockLensState && shockLensState.code !== alpha3) clearPolicyShockLens(false);
       selectedCountry = alpha3;
       // Highlight: dim all others, highlight selected
       d3.selectAll(".country-path")
@@ -682,6 +1044,7 @@
       comparedCountries.push({ code: alpha3, country: rec.country });
       drawComparisonChart();
     }
+    updateShockNav();
   }
 
   // ============================================================
@@ -820,12 +1183,15 @@
     );
     if (countryEvents.length) {
       const eventG = g.append("g").attr("class", "country-events");
+      const activeShockYear = shockLensState && shockLensState.code === code ? shockLensState.eventYear : null;
+      const baseEventRadius = (d) => (activeShockYear != null && d.year === activeShockYear ? 5.2 : 4);
 
       eventG.selectAll(".country-event-line")
         .data(countryEvents)
         .join("line")
         .attr("class", "country-event-line")
         .classed("matched", (d) => matchedEventByYear.has(d.year))
+        .classed("shock-active", (d) => activeShockYear != null && d.year === activeShockYear)
         .attr("x1", (d) => x(d.year))
         .attr("x2", (d) => x(d.year))
         .attr("y1", 0)
@@ -836,9 +1202,10 @@
         .join("circle")
         .attr("class", "country-event-dot")
         .classed("matched", (d) => matchedEventByYear.has(d.year))
+        .classed("shock-active", (d) => activeShockYear != null && d.year === activeShockYear)
         .attr("cx", (d) => x(d.year))
         .attr("cy", 12)
-        .attr("r", 4)
+        .attr("r", (d) => baseEventRadius(d))
         .on("mouseover", function (event, d) {
           const tip = d3.select("#tooltip");
           tip.style("display", "block");
@@ -850,13 +1217,18 @@
             const dir = match.transition.direction === "up" ? "increased" : "decreased";
             html += `<div class="tt-row"><span class="tt-label">Detected Shift:</span><span class="tt-val">${match.transition.metricLabel} ${dir} (${formatTransitionShift(match.transition)})</span></div>`;
           }
+          html += `<div class="tt-row"><span class="tt-label">Action:</span><span class="tt-val">Click for ±5y shock lens</span></div>`;
           tip.html(html);
-          d3.select(this).attr("r", 6);
+          d3.select(this).attr("r", 7);
         })
         .on("mousemove", onCountryMove)
-        .on("mouseout", function () {
+        .on("mouseout", function (event, d) {
           d3.select("#tooltip").style("display", "none");
-          d3.select(this).attr("r", 4);
+          d3.select(this).attr("r", baseEventRadius(d));
+        })
+        .on("click", function (event, d) {
+          event.stopPropagation();
+          activatePolicyShockLens(code, countryName, d);
         });
     }
 
@@ -906,7 +1278,8 @@
 
     // BRUSHING: drag to select year range on chart
     const brush = d3.brushX()
-      .extent([[0, 0], [width, height]])
+      // Keep top area free so event dots remain clickable.
+      .extent([[0, 22], [width, height]])
       .on("brush end", function (event) {
         if (!event.selection) {
           // Brush cleared
@@ -983,6 +1356,26 @@
     if (rec.fossil_fuel_pct != null) html += `<strong>Fossil Fuel:</strong> ${fmt(rec.fossil_fuel_pct)}% &nbsp;`;
     if (rec.access_electricity != null) html += `<strong>Electricity Access:</strong> ${fmt(rec.access_electricity)}%`;
     html += `</div>`;
+
+    if (!shockLensState || shockLensState.code !== code) {
+      html += `<div class="anno-section"><span class="anno-heading">Policy Shock Lens Entry</span><div class="anno-event">Click an event dot on the country chart (top markers) to compare 5 years before vs 5 years after that event.</div></div>`;
+    }
+
+    if (shockLensState && shockLensState.code === code && shockLensState.focus) {
+      const f = shockLensState.focus;
+      const renewClass = f.deltaRenew != null && f.deltaRenew >= 0 ? "up" : "down";
+      const fossilClass = f.deltaFossil != null && f.deltaFossil <= 0 ? "up" : "down";
+
+      html += `<div class="anno-section">`;
+      html += `<span class="anno-heading">Policy Shock Lens</span>`;
+      html += `<div class="anno-event"><span class="anno-year">${shockLensState.eventYear}</span><span class="anno-keyword">${shockLensState.eventKeyword}</span> ${shockLensState.eventTitle || ""}</div>`;
+      html += `<div class="anno-event">Window: ${shockLensState.beforeStart}-${shockLensState.beforeEnd} vs ${shockLensState.afterStart}-${shockLensState.afterEnd}</div>`;
+      html += `<div class="shock-anno-grid">`;
+      html += `<div class="shock-anno-metric"><span class="shock-anno-label">Renewable Change</span><span class="shock-anno-delta ${renewClass}">${formatSignedPP(f.deltaRenew)}</span><span class="shock-anno-range">${formatPercent(f.renewBefore)} → ${formatPercent(f.renewAfter)}</span></div>`;
+      html += `<div class="shock-anno-metric"><span class="shock-anno-label">Fossil Fuel Change</span><span class="shock-anno-delta ${fossilClass}">${formatSignedPP(f.deltaFossil)}</span><span class="shock-anno-range">${formatPercent(f.fossilBefore)} → ${formatPercent(f.fossilAfter)}</span></div>`;
+      html += `</div>`;
+      html += `</div>`;
+    }
 
     const transitions = detectedTransitions || detectCountryTransitions(code);
     const transitionsForDisplay = transitions.some((t) => t.metricKey !== "energy_per_capita")
@@ -1355,6 +1748,7 @@
           event.stopPropagation();
           comparedCountries = comparedCountries.filter(cc => cc.code !== s.code);
           if (selectedCountry === s.code) {
+            clearPolicyShockLens(false);
             selectedCountry = null;
             d3.selectAll(".country-path").classed("selected", false).classed("dimmed", false);
             d3.select("#chart-title").text("Select a country on the map");
@@ -1362,6 +1756,7 @@
             d3.select("#annotation-box").html("");
           }
           drawComparisonChart();
+          updateShockNav();
         });
     });
   }
@@ -1393,10 +1788,19 @@
       currentMetric = this.value;
       updateMap();
       drawComparisonChart();
-      if (selectedCountry) {
-        const rec = closestYearData(selectedCountry, currentYear);
-        if (rec) drawStackedArea(selectedCountry, rec.country);
+      const selectedRec = selectedCountry ? closestYearData(selectedCountry, currentYear) : null;
+      if (selectedCountry && selectedRec) drawStackedArea(selectedCountry, selectedRec.country);
+      if (shockLensState && selectedCountry === shockLensState.code) {
+        const eventRef = {
+          year: shockLensState.eventYear,
+          keyword: shockLensState.eventKeyword,
+          title: shockLensState.eventTitle,
+          impact: shockLensState.eventImpact,
+        };
+        shockLensState = buildPolicyShockLensState(selectedCountry, selectedRec ? selectedRec.country : shockLensState.country, eventRef);
+        updatePolicyShockLensPanel();
       }
+      updateShockNav();
     });
 
     // Region filter
@@ -1405,14 +1809,29 @@
       d3.select("#tooltip").style("display", "none");
       const selectedRec = selectedCountry ? closestYearData(selectedCountry, currentYear) : null;
       if (selectedCountry && !passesRegionFilter(selectedRec)) {
+        clearPolicyShockLens(false);
         selectedCountry = null;
         d3.selectAll(".country-path").classed("selected", false).classed("dimmed", false);
         d3.select("#chart-title").text("Select a country on the map");
         d3.select("#stack-chart").selectAll("*").remove();
         d3.select("#annotation-box").html("");
       }
+      if (shockLensState && selectedCountry === shockLensState.code) {
+        const eventRef = {
+          year: shockLensState.eventYear,
+          keyword: shockLensState.eventKeyword,
+          title: shockLensState.eventTitle,
+          impact: shockLensState.eventImpact,
+        };
+        shockLensState = buildPolicyShockLensState(selectedCountry, selectedRec ? selectedRec.country : shockLensState.country, eventRef);
+        if (!shockLensState) clearPolicyShockLens(false);
+      } else if (shockLensState) {
+        clearPolicyShockLens(false);
+      }
       updateMap();
       updateInsightBar();
+      updatePolicyShockLensPanel();
+      updateShockNav();
     });
 
     // Clear comparison list
@@ -1423,6 +1842,43 @@
 
     // Play button
     d3.select("#play-btn").on("click", togglePlay);
+
+    d3.select("#shock-lens-close-btn").on("click", function () {
+      clearPolicyShockLens();
+    });
+
+    d3.select("#shock-nav-enable").on("change", function () {
+      if (this.checked) applyShockNavSelection();
+      else clearPolicyShockLens();
+    });
+
+    d3.select("#shock-event-select").on("change", function () {
+      const autoApply = d3.select("#shock-nav-enable").property("checked");
+      if (autoApply) applyShockNavSelection();
+      else updateShockNav();
+    });
+
+    d3.select("#shock-prev-btn").on("click", function () {
+      shiftShockNavEvent(-1);
+      const autoApply = d3.select("#shock-nav-enable").property("checked");
+      if (autoApply) applyShockNavSelection();
+      else updateShockNav();
+    });
+
+    d3.select("#shock-next-btn").on("click", function () {
+      shiftShockNavEvent(1);
+      const autoApply = d3.select("#shock-nav-enable").property("checked");
+      if (autoApply) applyShockNavSelection();
+      else updateShockNav();
+    });
+
+    d3.select("#shock-apply-btn").on("click", function () {
+      applyShockNavSelection();
+    });
+
+    d3.select("#shock-close-btn").on("click", function () {
+      clearPolicyShockLens();
+    });
 
     // Speed button
     d3.select("#speed-btn").on("click", function () {
@@ -1435,6 +1891,8 @@
         startPlayInterval();
       }
     });
+
+    updateShockNav();
   }
 
   function onYearChange() {
@@ -1444,6 +1902,7 @@
       if (rec && passesRegionFilter(rec)) {
         drawStackedArea(selectedCountry, rec.country);
       } else {
+        clearPolicyShockLens(false);
         selectedCountry = null;
         d3.selectAll(".country-path").classed("selected", false).classed("dimmed", false);
         d3.select("#chart-title").text("Select a country on the map");
@@ -1451,9 +1910,26 @@
         d3.select("#annotation-box").html("");
       }
     }
+    if (shockLensState) {
+      if (!selectedCountry || shockLensState.code !== selectedCountry) {
+        clearPolicyShockLens(false);
+      } else {
+        const rec = closestYearData(selectedCountry, currentYear);
+        const eventRef = {
+          year: shockLensState.eventYear,
+          keyword: shockLensState.eventKeyword,
+          title: shockLensState.eventTitle,
+          impact: shockLensState.eventImpact,
+        };
+        shockLensState = buildPolicyShockLensState(selectedCountry, rec ? rec.country : shockLensState.country, eventRef);
+        if (!shockLensState) clearPolicyShockLens(false);
+        else updatePolicyShockLensPanel();
+      }
+    }
     drawComparisonChart();
     updateInsightBar();
     updateTimelinePlayhead();
+    updateShockNav();
   }
 
   function startPlayInterval() {
