@@ -25,6 +25,11 @@
   let speedIndex = 0;
   let playSpeed = SPEED_OPTIONS[0];
   const SHOCK_WINDOW_YEARS = 5;
+  const STORY_STEP_DELAY_MS = 5200;
+  let storyActive = false;
+  let storyStepIndex = -1;
+  let storyTimer = null;
+  let resizeTimer = null;
 
   const ENERGY_SOURCES = [
     { key: "elec_coal", label: "Coal", color: "#5d4037" },
@@ -51,6 +56,37 @@
     { year: 2015, text: "Paris Agreement" },
   ];
 
+  const STORY_STEPS = [
+    {
+      year: 1973,
+      code: "USA",
+      metric: "fossil_fuel_pct",
+      title: "1973 Oil Crisis",
+      text: "Energy security became a central policy concern and exposed fossil dependency risks.",
+    },
+    {
+      year: 1986,
+      code: "FRA",
+      metric: "renewable_pct",
+      title: "Post-Chernobyl Reassessment",
+      text: "Safety concerns reshaped long-term electricity planning and diversified transition pathways.",
+    },
+    {
+      year: 2000,
+      code: "DEU",
+      metric: "renewable_elec_output",
+      title: "Germany Feed-in Law Era",
+      text: "Feed-in policies accelerated renewable deployment and shifted generation structure.",
+    },
+    {
+      year: 2015,
+      code: "GBR",
+      metric: "fossil_fuel_pct",
+      title: "Paris Agreement Momentum",
+      text: "Decarbonization targets strengthened and fossil-heavy generation began a visible decline.",
+    },
+  ];
+
   // ============================================================
   // DIRECTION 1: Data-driven ambient background
   // ============================================================
@@ -67,11 +103,29 @@
     const g = Math.round(BG_WARM.g + t * (BG_COOL.g - BG_WARM.g));
     const b = Math.round(BG_WARM.b + t * (BG_COOL.b - BG_WARM.b));
     document.body.style.background = `rgb(${r},${g},${b})`;
-    document.getElementById("app").style.background = `rgb(${r},${g},${b})`;
+    const app = document.getElementById("app");
+    if (app) app.style.background = "transparent";
+
+    const root = document.documentElement;
+    const c1 = t < 0.5
+      ? interpolateColor("#f97316", "#7c3aed", t / 0.5)
+      : interpolateColor("#7c3aed", "#0ea5e9", (t - 0.5) / 0.5);
+    const c2 = t < 0.5
+      ? interpolateColor("#dc2626", "#b87fff", t / 0.5)
+      : interpolateColor("#b87fff", "#10b981", (t - 0.5) / 0.5);
+    const c3 = interpolateColor("#f97316", "#10b981", t);
+    root.style.setProperty("--aurora-c1", c1);
+    root.style.setProperty("--aurora-c2", c2);
+    root.style.setProperty("--aurora-c3", c3);
 
     // Year label color also shifts
     const yearEl = document.getElementById("year-label");
-    yearEl.style.color = interpolateColor(YEAR_COLOR_WARM, YEAR_COLOR_COOL, t);
+    const yearColor = interpolateColor(YEAR_COLOR_WARM, YEAR_COLOR_COOL, t);
+    yearEl.style.color = yearColor;
+    yearEl.style.textShadow = `0 0 30px ${yearColor}44, 0 0 60px ${yearColor}1a`;
+
+    const mapContainer = document.getElementById("map-container");
+    if (mapContainer) mapContainer.setAttribute("data-year", String(currentYear));
   }
 
   function interpolateColor(c1, c2, t) {
@@ -118,7 +172,7 @@
         const x = (e.clientX - rect.left) / rect.width - 0.5;  // -0.5 .. 0.5
         const y = (e.clientY - rect.top) / rect.height - 0.5;
         card.style.transform = `perspective(600px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg)`;
-        card.style.boxShadow = `${-x * 8}px ${y * 8}px 24px rgba(0,0,0,0.08)`;
+        card.style.boxShadow = `${-x * 10}px ${y * 10}px 32px rgba(0,0,0,0.3)`;
       });
       card.addEventListener("mouseleave", () => {
         card.style.transform = "";
@@ -135,6 +189,11 @@
     const diff = to - from;
     if (diff === 0) return;
 
+    // Trigger tick animation
+    el.classList.remove("tick");
+    void el.offsetWidth; // force reflow
+    el.classList.add("tick");
+
     function tick(now) {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
@@ -145,6 +204,21 @@
       if (progress < 1) requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
+  }
+
+  function triggerYearFx() {
+    const yearLabel = document.getElementById("year-label");
+    const yearDisplay = document.getElementById("year-display");
+    if (yearLabel) {
+      yearLabel.classList.remove("glitch");
+      void yearLabel.offsetWidth;
+      yearLabel.classList.add("glitch");
+    }
+    if (yearDisplay) {
+      yearDisplay.classList.remove("flash");
+      void yearDisplay.offsetWidth;
+      yearDisplay.classList.add("flash");
+    }
   }
 
   // --- Helpers ---
@@ -205,6 +279,99 @@
   function fmt(v) {
     if (v == null) return "N/A";
     return v >= 1000 ? d3.format(",.0f")(v) : d3.format(".1f")(v);
+  }
+
+  function formatMetricValue(v, metricKey) {
+    if (v == null || !Number.isFinite(v)) return "N/A";
+    if (metricKey === "energy_per_capita") {
+      return `${d3.format(",.0f")(v)} kg oil eq.`;
+    }
+    return `${d3.format(".1f")(v)}%`;
+  }
+
+  function getMetricUnit(metricKey) {
+    return metricKey === "energy_per_capita" ? "kg oil eq." : "%";
+  }
+
+  function formatLegendValue(v, metricKey) {
+    if (v == null || !Number.isFinite(v)) return "N/A";
+    if (metricKey === "energy_per_capita") return d3.format(",.0f")(v);
+    return `${d3.format(".1f")(v)}%`;
+  }
+
+  function updateBrushHintText() {
+    const hint = d3.select("#brush-hint");
+    if (hint.empty()) return;
+
+    if (!selectedCountry) {
+      hint.text("Tip: Select a country, then drag on the chart to filter map by year range.");
+      return;
+    }
+
+    if (brushedYearRange && brushedYearRange.length === 2) {
+      const [start, end] = brushedYearRange;
+      hint.text(`Map filtered by ${start}-${end}. Drag another range or click empty chart area to clear.`);
+      return;
+    }
+
+    hint.text("Tip: Drag on the chart to filter map by year range.");
+  }
+
+  function updateDeselectButton() {
+    const btn = d3.select("#deselect-country-btn");
+    if (btn.empty()) return;
+    const visible = !!selectedCountry;
+    btn.style("display", visible ? "inline-flex" : "none");
+    btn.property("disabled", !visible);
+  }
+
+  function applyCountryHighlight() {
+    d3.selectAll(".country-path")
+      .classed("selected", function (dd) {
+        return !!selectedCountry && countryAlpha3FromTopoId(dd.id) === selectedCountry;
+      })
+      .classed("dimmed", function (dd) {
+        return !!selectedCountry && countryAlpha3FromTopoId(dd.id) !== selectedCountry;
+      });
+  }
+
+  function clearSelectedCountry(clearBrush = true) {
+    clearPolicyShockLens(false);
+    if (clearBrush && brushedYearRange) {
+      brushedYearRange = null;
+      updateMap();
+    }
+    selectedCountry = null;
+    applyCountryHighlight();
+    d3.select("#chart-title").text("Select a country on the map");
+    d3.select("#stack-chart").selectAll("*").remove();
+    d3.select("#annotation-box").html("");
+    updateShockNav();
+    updateBrushHintText();
+    updateDeselectButton();
+  }
+
+  function focusCountry(code, countryName = null, addToComparison = true) {
+    if (!code) return false;
+    const rec = closestYearData(code, currentYear);
+    if (!rec || !passesRegionFilter(rec)) return false;
+
+    if (shockLensState && shockLensState.code !== code) clearPolicyShockLens(false);
+    selectedCountry = code;
+    applyCountryHighlight();
+    if (mapSvg) mapSvg.selectAll(".map-guide").remove();
+    drawStackedArea(code, countryName || rec.country);
+
+    if (addToComparison && !comparedCountries.find((c) => c.code === code)) {
+      if (comparedCountries.length >= 6) comparedCountries.shift();
+      comparedCountries.push({ code, country: rec.country });
+      drawComparisonChart();
+    }
+
+    updateShockNav();
+    updateBrushHintText();
+    updateDeselectButton();
+    return true;
   }
 
   function normalizeEventRecord(evt) {
@@ -748,6 +915,10 @@
     updateAmbientBackground();
     setShockLensVisibility(false);
     updateShockNav();
+    updateBrushHintText();
+    updateDeselectButton();
+    updateStoryUI();
+    window.addEventListener("resize", handleWindowResize, { passive: true });
     initScrollReveal();
     initTiltCards();
   }
@@ -765,6 +936,30 @@
   let mapSvg, mapG, projection, pathGen, mapWidth, mapHeight;
   let zoom;
 
+  function mapTransformIsIdentity(transform) {
+    if (!transform) return true;
+    return (
+      Math.abs(transform.k - 1) < 1e-3
+      && Math.abs(transform.x) < 0.5
+      && Math.abs(transform.y) < 0.5
+    );
+  }
+
+  function updateMapResetButton(transform) {
+    const btn = d3.select("#map-reset-btn");
+    if (btn.empty()) return;
+    btn.property("disabled", mapTransformIsIdentity(transform));
+  }
+
+  function resetMapZoom() {
+    if (!mapSvg || !zoom) return;
+    mapSvg
+      .transition()
+      .duration(380)
+      .ease(d3.easeCubicOut)
+      .call(zoom.transform, d3.zoomIdentity);
+  }
+
   function drawMap() {
     const container = document.getElementById("map-container");
     mapWidth = container.clientWidth;
@@ -774,6 +969,7 @@
       .select("#map-svg")
       .attr("viewBox", `0 0 ${mapWidth} ${mapHeight}`)
       .attr("preserveAspectRatio", "xMidYMid meet");
+    mapSvg.selectAll("*").remove();
 
     projection = d3
       .geoNaturalEarth1()
@@ -787,9 +983,11 @@
       .scaleExtent([1, 8])
       .on("zoom", (event) => {
         mapG.attr("transform", event.transform);
+        updateMapResetButton(event.transform);
       });
 
     mapSvg.call(zoom);
+    updateMapResetButton(d3.zoomIdentity);
 
     // Graticule
     mapSvg
@@ -815,33 +1013,36 @@
       .on("mousemove", onCountryMove)
       .on("mouseout", onCountryOut)
       .on("click", onCountryClick);
+    applyCountryHighlight();
 
-    // Narrative guide overlay
-    const guideG = mapSvg.append("g").attr("class", "map-guide");
-    guideG.append("circle")
-      .attr("cx", mapWidth / 2)
-      .attr("cy", mapHeight / 2)
-      .attr("r", 28)
-      .attr("fill", "none")
-      .attr("stroke", "rgba(88,166,255,0.6)")
-      .attr("stroke-width", 2)
-      .attr("class", "guide-ring");
-    guideG.append("text")
-      .attr("x", mapWidth / 2)
-      .attr("y", mapHeight / 2 + 52)
-      .attr("text-anchor", "middle")
-      .attr("fill", "rgba(255,255,255,0.6)")
-      .attr("font-size", 14)
-      .attr("font-weight", 600)
-      .text("Click a country to explore");
-    // Pointer icon
-    guideG.append("text")
-      .attr("x", mapWidth / 2)
-      .attr("y", mapHeight / 2 + 7)
-      .attr("text-anchor", "middle")
-      .attr("font-size", 24)
-      .attr("fill", "rgba(88,166,255,0.8)")
-      .text("\u{1F447}");
+    if (!selectedCountry) {
+      // Narrative guide overlay
+      const guideG = mapSvg.append("g").attr("class", "map-guide");
+      guideG.append("circle")
+        .attr("cx", mapWidth / 2)
+        .attr("cy", mapHeight / 2)
+        .attr("r", 28)
+        .attr("fill", "none")
+        .attr("stroke", "rgba(88,166,255,0.6)")
+        .attr("stroke-width", 2)
+        .attr("class", "guide-ring");
+      guideG.append("text")
+        .attr("x", mapWidth / 2)
+        .attr("y", mapHeight / 2 + 52)
+        .attr("text-anchor", "middle")
+        .attr("fill", "rgba(255,255,255,0.6)")
+        .attr("font-size", 14)
+        .attr("font-weight", 600)
+        .text("Click a country to explore");
+      // Pointer icon
+      guideG.append("text")
+        .attr("x", mapWidth / 2)
+        .attr("y", mapHeight / 2 + 7)
+        .attr("text-anchor", "middle")
+        .attr("font-size", 24)
+        .attr("fill", "rgba(88,166,255,0.8)")
+        .text("\u{1F447}");
+    }
   }
 
   function getColorScale() {
@@ -944,14 +1145,15 @@
 
     svg.append("text").attr("x", 30).attr("y", h + 16)
       .attr("fill", "rgba(255,255,255,0.45)").attr("font-size", 10)
-      .text(fmt(domain[0]));
+      .text(formatLegendValue(domain[0], currentMetric));
 
     svg.append("text").attr("x", 30 + w).attr("y", h + 16)
       .attr("text-anchor", "end")
       .attr("fill", "rgba(255,255,255,0.45)").attr("font-size", 10)
-      .text(fmt(domain[1]));
+      .text(formatLegendValue(domain[1], currentMetric));
 
     container.append("span").text(METRIC_LABELS[currentMetric]);
+    container.append("span").attr("class", "legend-unit").text(getMetricUnit(currentMetric));
   }
 
   // --- Map interactions ---
@@ -1010,6 +1212,13 @@
     const rec = closestYearData(alpha3, currentYear);
     if (!rec || !passesRegionFilter(rec)) return;
 
+    if (storyActive) stopStoryMode(false);
+
+    if (brushedYearRange) {
+      brushedYearRange = null;
+      updateMap();
+    }
+
     // DIRECTION 2: Ripple
     createRipple(event);
 
@@ -1018,33 +1227,10 @@
 
     // Toggle selection
     if (selectedCountry === alpha3) {
-      clearPolicyShockLens(false);
-      selectedCountry = null;
-      d3.selectAll(".country-path").classed("selected", false).classed("dimmed", false);
-      d3.select("#chart-title").text("Select a country on the map");
-      d3.select("#stack-chart").selectAll("*").remove();
-      d3.select("#annotation-box").html("");
+      clearSelectedCountry(false);
     } else {
-      if (shockLensState && shockLensState.code !== alpha3) clearPolicyShockLens(false);
-      selectedCountry = alpha3;
-      // Highlight: dim all others, highlight selected
-      d3.selectAll(".country-path")
-        .classed("selected", function (dd) {
-          return countryAlpha3FromTopoId(dd.id) === alpha3;
-        })
-        .classed("dimmed", function (dd) {
-          return countryAlpha3FromTopoId(dd.id) !== alpha3;
-        });
-      drawStackedArea(alpha3, rec.country);
+      focusCountry(alpha3, rec.country, true);
     }
-
-    // Add to comparison
-    if (alpha3 && !comparedCountries.find((c) => c.code === alpha3)) {
-      if (comparedCountries.length >= 6) comparedCountries.shift();
-      comparedCountries.push({ code: alpha3, country: rec.country });
-      drawComparisonChart();
-    }
-    updateShockNav();
   }
 
   // ============================================================
@@ -1286,6 +1472,7 @@
           brushedYearRange = null;
           d3.select("#brush-label").remove();
           updateMap();
+          updateBrushHintText();
           return;
         }
         const [x0, x1] = event.selection;
@@ -1306,6 +1493,7 @@
           .text(`${y0} – ${y1}`);
 
         updateMapForBrush(y0, y1);
+        updateBrushHintText();
       });
 
     g.append("g")
@@ -1444,7 +1632,9 @@
     const w = containerW - margin.left - margin.right;
     const h = 52 - margin.top - margin.bottom;
 
-    timelineSvg = d3.select("#timeline-chart")
+    timelineSvg = d3.select("#timeline-chart");
+    timelineSvg.selectAll("*").remove();
+    timelineSvg
       .attr("viewBox", `0 0 ${containerW} 52`)
       .attr("preserveAspectRatio", "xMidYMid meet");
 
@@ -1531,6 +1721,7 @@
           d3.select(this).attr("r", 3.5);
         })
         .on("click", function () {
+          if (storyActive) stopStoryMode(false);
           currentYear = ann.year;
           d3.select("#year-slider").property("value", currentYear);
           d3.select("#year-label").text(currentYear);
@@ -1658,6 +1849,17 @@
       .y(d => y(d[currentMetric]))
       .curve(d3.curveMonotoneX);
 
+    const bisectYear = d3.bisector((d) => d.year).left;
+    function nearestSeriesPoint(series, targetYear) {
+      if (!series || !series.length) return null;
+      const idx = bisectYear(series, targetYear);
+      if (idx <= 0) return series[0];
+      if (idx >= series.length) return series[series.length - 1];
+      const prev = series[idx - 1];
+      const next = series[idx];
+      return Math.abs(prev.year - targetYear) <= Math.abs(next.year - targetYear) ? prev : next;
+    }
+
     // Draw each country line with animation
     allSeries.forEach((s, idx) => {
       if (s.data.length < 2) return;
@@ -1720,6 +1922,87 @@
         .attr("y1", 0).attr("y2", height);
     }
 
+    // Hover readout: bisect nearest year + multi-series tooltip.
+    const hoverG = g.append("g")
+      .attr("class", "compare-hover-layer")
+      .style("display", "none")
+      .style("pointer-events", "none");
+
+    const hoverLine = hoverG.append("line")
+      .attr("class", "compare-hover-line")
+      .attr("y1", 0)
+      .attr("y2", height);
+
+    const hoverDots = hoverG.selectAll(".compare-hover-dot")
+      .data(allSeries)
+      .join("circle")
+      .attr("class", "compare-hover-dot")
+      .attr("r", 4.2)
+      .attr("fill", (d) => d.color)
+      .attr("stroke", "var(--bg-deep)")
+      .attr("stroke-width", 1.8);
+
+    g.append("rect")
+      .attr("class", "compare-hover-capture")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", width)
+      .attr("height", height)
+      .attr("fill", "transparent")
+      .style("cursor", "crosshair")
+      .on("mouseenter", function () {
+        hoverG.style("display", null);
+      })
+      .on("mousemove", function (event) {
+        const [mx] = d3.pointer(event, this);
+        const clampedX = Math.max(0, Math.min(width, mx));
+        const minYear = Math.round(x.domain()[0]);
+        const maxYear = Math.round(x.domain()[1]);
+        const hoverYear = Math.max(minYear, Math.min(maxYear, Math.round(x.invert(clampedX))));
+
+        hoverLine
+          .attr("x1", x(hoverYear))
+          .attr("x2", x(hoverYear));
+
+        const rows = [];
+        hoverDots.each(function (series) {
+          const point = nearestSeriesPoint(series.data, hoverYear);
+          if (!point) {
+            d3.select(this).style("display", "none");
+            return;
+          }
+          d3.select(this)
+            .style("display", null)
+            .attr("cx", x(point.year))
+            .attr("cy", y(point[currentMetric]));
+
+          rows.push({
+            country: series.country,
+            color: series.color,
+            value: point[currentMetric],
+            year: point.year,
+          });
+        });
+
+        if (!rows.length) {
+          d3.select("#tooltip").style("display", "none");
+          return;
+        }
+
+        let html = `<div class="tt-title">${hoverYear} • ${METRIC_LABELS[currentMetric]}</div>`;
+        rows.forEach((row) => {
+          const yearSuffix = row.year === hoverYear ? "" : ` (${row.year})`;
+          html += `<div class="tt-row"><span class="tt-label" style="color:${row.color}">${row.country}${yearSuffix}:</span><span class="tt-val">${formatMetricValue(row.value, currentMetric)}</span></div>`;
+        });
+
+        d3.select("#tooltip").style("display", "block").html(html);
+        onCountryMove(event);
+      })
+      .on("mouseleave", function () {
+        hoverG.style("display", "none");
+        d3.select("#tooltip").style("display", "none");
+      });
+
     // Metric label
     g.append("text")
       .attr("x", -margin.left + 4).attr("y", -8)
@@ -1739,7 +2022,7 @@
 
       if (latestVal) {
         item.append("span").attr("class", "compare-legend-val")
-          .text(`${fmt(latestVal[currentMetric])}`);
+          .text(formatMetricValue(latestVal[currentMetric], currentMetric));
       }
 
       item.append("span").attr("class", "compare-legend-remove")
@@ -1748,17 +2031,119 @@
           event.stopPropagation();
           comparedCountries = comparedCountries.filter(cc => cc.code !== s.code);
           if (selectedCountry === s.code) {
-            clearPolicyShockLens(false);
-            selectedCountry = null;
-            d3.selectAll(".country-path").classed("selected", false).classed("dimmed", false);
-            d3.select("#chart-title").text("Select a country on the map");
-            d3.select("#stack-chart").selectAll("*").remove();
-            d3.select("#annotation-box").html("");
+            clearSelectedCountry();
           }
           drawComparisonChart();
           updateShockNav();
+          updateBrushHintText();
+          updateDeselectButton();
         });
     });
+  }
+
+  function updateStoryUI() {
+    const bar = d3.select("#story-bar");
+    if (bar.empty()) return;
+
+    bar.classed("inactive", !storyActive);
+    d3.select("#story-prev-btn").property("disabled", !storyActive || storyStepIndex <= 0);
+    d3.select("#story-next-btn").property("disabled", !storyActive || storyStepIndex >= STORY_STEPS.length - 1);
+    d3.select("#story-stop-btn").property("disabled", !storyActive);
+    d3.select("#story-btn").text(storyActive ? "Restart Story" : "Start Story Mode");
+
+    if (!storyActive && storyStepIndex < 0) {
+      d3.select("#story-title").text("Guided Narrative");
+      d3.select("#story-text").text("Walk through key energy transition moments across countries.");
+    }
+  }
+
+  function clearStoryTimer() {
+    if (storyTimer) {
+      clearTimeout(storyTimer);
+      storyTimer = null;
+    }
+  }
+
+  function stopStoryMode(resetCopy = true) {
+    storyActive = false;
+    clearStoryTimer();
+    if (resetCopy) storyStepIndex = -1;
+    updateStoryUI();
+  }
+
+  function applyStoryStep(index, scheduleNext = true) {
+    if (index < 0 || index >= STORY_STEPS.length) return;
+    const step = STORY_STEPS[index];
+    storyActive = true;
+    storyStepIndex = index;
+    clearStoryTimer();
+
+    if (playing) togglePlay();
+
+    if (currentRegion !== "all") {
+      currentRegion = "all";
+      d3.select("#region-select").property("value", "all");
+    }
+    if (step.metric && currentMetric !== step.metric) {
+      currentMetric = step.metric;
+      d3.select("#metric-select").property("value", currentMetric);
+    }
+    if (brushedYearRange) brushedYearRange = null;
+
+    currentYear = step.year;
+    d3.select("#year-slider").property("value", currentYear);
+    d3.select("#year-label").text(currentYear);
+    updateAmbientBackground();
+    onYearChange();
+    focusCountry(step.code, null, true);
+
+    const countryRec = closestYearData(step.code, currentYear);
+    const countryName = countryRec ? countryRec.country : step.code;
+    d3.select("#story-title").text(`${index + 1}/${STORY_STEPS.length} • ${step.title}`);
+    d3.select("#story-text").text(`${countryName} (${step.year}): ${step.text}`);
+    updateStoryUI();
+
+    if (scheduleNext && storyActive && index < STORY_STEPS.length - 1) {
+      storyTimer = setTimeout(() => {
+        if (!storyActive) return;
+        applyStoryStep(storyStepIndex + 1, true);
+      }, STORY_STEP_DELAY_MS);
+    }
+  }
+
+  function stepStory(delta) {
+    if (!storyActive) {
+      applyStoryStep(delta < 0 ? STORY_STEPS.length - 1 : 0, true);
+      return;
+    }
+    const nextIndex = Math.max(0, Math.min(STORY_STEPS.length - 1, storyStepIndex + delta));
+    applyStoryStep(nextIndex, true);
+  }
+
+  function handleWindowResize() {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      drawMap();
+      updateMap();
+      drawTimeline();
+      drawComparisonChart();
+
+      if (selectedCountry) {
+        const rec = closestYearData(selectedCountry, currentYear);
+        if (rec && passesRegionFilter(rec)) {
+          applyCountryHighlight();
+          drawStackedArea(selectedCountry, rec.country);
+        } else {
+          clearSelectedCountry(false);
+        }
+      }
+
+      updatePolicyShockLensPanel();
+      updateShockNav();
+      updateBrushHintText();
+      updateDeselectButton();
+      updateStoryUI();
+    }, 150);
   }
 
   // ============================================================
@@ -1769,6 +2154,7 @@
 
     // Year slider
     d3.select("#year-slider").on("input", function () {
+      if (storyActive) stopStoryMode(false);
       const newYear = +this.value;
       // DIRECTION 5b: Animated counter (only if small jump)
       if (Math.abs(newYear - prevYear) <= 5 && Math.abs(newYear - prevYear) > 1) {
@@ -1785,7 +2171,9 @@
 
     // Metric select
     d3.select("#metric-select").on("change", function () {
+      if (storyActive) stopStoryMode(false);
       currentMetric = this.value;
+      if (brushedYearRange) brushedYearRange = null;
       updateMap();
       drawComparisonChart();
       const selectedRec = selectedCountry ? closestYearData(selectedCountry, currentYear) : null;
@@ -1801,20 +2189,18 @@
         updatePolicyShockLensPanel();
       }
       updateShockNav();
+      updateBrushHintText();
     });
 
     // Region filter
     d3.select("#region-select").on("change", function () {
+      if (storyActive) stopStoryMode(false);
       currentRegion = this.value;
+      if (brushedYearRange) brushedYearRange = null;
       d3.select("#tooltip").style("display", "none");
       const selectedRec = selectedCountry ? closestYearData(selectedCountry, currentYear) : null;
       if (selectedCountry && !passesRegionFilter(selectedRec)) {
-        clearPolicyShockLens(false);
-        selectedCountry = null;
-        d3.selectAll(".country-path").classed("selected", false).classed("dimmed", false);
-        d3.select("#chart-title").text("Select a country on the map");
-        d3.select("#stack-chart").selectAll("*").remove();
-        d3.select("#annotation-box").html("");
+        clearSelectedCountry(false);
       }
       if (shockLensState && selectedCountry === shockLensState.code) {
         const eventRef = {
@@ -1832,16 +2218,48 @@
       updateInsightBar();
       updatePolicyShockLensPanel();
       updateShockNav();
+      updateBrushHintText();
     });
 
     // Clear comparison list
     d3.select("#clear-compare-btn").on("click", function () {
       comparedCountries = [];
       drawComparisonChart();
+      updateBrushHintText();
+    });
+
+    d3.select("#deselect-country-btn").on("click", function () {
+      if (storyActive) stopStoryMode(false);
+      clearSelectedCountry();
+    });
+
+    d3.select("#map-reset-btn").on("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      resetMapZoom();
     });
 
     // Play button
-    d3.select("#play-btn").on("click", togglePlay);
+    d3.select("#play-btn").on("click", function () {
+      if (storyActive) stopStoryMode(false);
+      togglePlay();
+    });
+
+    d3.select("#story-btn").on("click", function () {
+      applyStoryStep(0, true);
+    });
+
+    d3.select("#story-prev-btn").on("click", function () {
+      stepStory(-1);
+    });
+
+    d3.select("#story-next-btn").on("click", function () {
+      stepStory(1);
+    });
+
+    d3.select("#story-stop-btn").on("click", function () {
+      stopStoryMode(true);
+    });
 
     d3.select("#shock-lens-close-btn").on("click", function () {
       clearPolicyShockLens();
@@ -1893,21 +2311,21 @@
     });
 
     updateShockNav();
+    updateBrushHintText();
+    updateDeselectButton();
+    updateStoryUI();
   }
 
   function onYearChange() {
+    triggerYearFx();
+    if (brushedYearRange) brushedYearRange = null;
     updateMap();
     if (selectedCountry) {
       const rec = closestYearData(selectedCountry, currentYear);
       if (rec && passesRegionFilter(rec)) {
         drawStackedArea(selectedCountry, rec.country);
       } else {
-        clearPolicyShockLens(false);
-        selectedCountry = null;
-        d3.selectAll(".country-path").classed("selected", false).classed("dimmed", false);
-        d3.select("#chart-title").text("Select a country on the map");
-        d3.select("#stack-chart").selectAll("*").remove();
-        d3.select("#annotation-box").html("");
+        clearSelectedCountry(false);
       }
     }
     if (shockLensState) {
@@ -1930,6 +2348,8 @@
     updateInsightBar();
     updateTimelinePlayhead();
     updateShockNav();
+    updateBrushHintText();
+    updateDeselectButton();
   }
 
   function startPlayInterval() {

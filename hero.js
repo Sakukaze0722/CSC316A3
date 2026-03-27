@@ -1,110 +1,18 @@
 // ============================================================
-// Hero Landing — Particle canvas + animations
+// Hero Landing — Aurora Neon blobs + animations
 // ============================================================
 (function () {
   "use strict";
 
   const canvas = document.getElementById("hero-canvas");
   const ctx = canvas.getContext("2d");
-  let W, H;
-  let particles = [];
-  let mouse = { x: -1000, y: -1000 };
-  let animId;
+  let W = 0;
+  let H = 0;
+  let blobs = [];
+  let animId = null;
+  let mouse = { x: -10000, y: -10000 };
 
-  // Colors: warm (fossil) → cool (renewable) palette
-  const COLORS = [
-    "#e65100", "#ff8f00", "#f4511e", // warm
-    "#0288d1", "#43a047", "#26a69a", // cool
-    "#7b1fa2", "#5d4037",            // accent
-  ];
-
-  function resize() {
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  }
-
-  function createParticles() {
-    particles = [];
-    const count = Math.floor((W * H) / 6000);
-    for (let i = 0; i < count; i++) {
-      particles.push({
-        x: Math.random() * W,
-        y: Math.random() * H,
-        vx: (Math.random() - 0.5) * 0.6,
-        vy: (Math.random() - 0.5) * 0.6,
-        r: Math.random() * 2.5 + 1,
-        color: COLORS[Math.floor(Math.random() * COLORS.length)],
-        alpha: Math.random() * 0.5 + 0.2,
-        pulse: Math.random() * Math.PI * 2,
-      });
-    }
-  }
-
-  function drawParticles() {
-    ctx.clearRect(0, 0, W, H);
-
-    // Connections
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i + 1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x;
-        const dy = particles[i].y - particles[j].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 120) {
-          ctx.beginPath();
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = `rgba(100,140,180,${0.12 * (1 - dist / 120)})`;
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
-        }
-      }
-    }
-
-    // Particles
-    const time = Date.now() * 0.002;
-    particles.forEach((p) => {
-      // Mouse repulsion
-      const dmx = p.x - mouse.x;
-      const dmy = p.y - mouse.y;
-      const dm = Math.sqrt(dmx * dmx + dmy * dmy);
-      if (dm < 150) {
-        const force = (150 - dm) / 150 * 0.8;
-        p.vx += (dmx / dm) * force;
-        p.vy += (dmy / dm) * force;
-      }
-
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vx *= 0.99;
-      p.vy *= 0.99;
-
-      // Wrap around edges
-      if (p.x < -10) p.x = W + 10;
-      if (p.x > W + 10) p.x = -10;
-      if (p.y < -10) p.y = H + 10;
-      if (p.y > H + 10) p.y = -10;
-
-      // Pulsing glow
-      const pulseAlpha = p.alpha + Math.sin(time + p.pulse) * 0.15;
-
-      // Glow
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2);
-      ctx.fillStyle = p.color.replace(")", `,${pulseAlpha * 0.15})`).replace("rgb", "rgba").replace("#", "");
-      // Use hex-to-rgba for glow
-      const [gr, gg, gb] = hexToRgb(p.color);
-      ctx.fillStyle = `rgba(${gr},${gg},${gb},${pulseAlpha * 0.15})`;
-      ctx.fill();
-
-      // Core
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${gr},${gg},${gb},${pulseAlpha})`;
-      ctx.fill();
-    });
-
-    animId = requestAnimationFrame(drawParticles);
-  }
+  const COLORS = ["#58a6ff", "#4ade80", "#fb923c", "#c084fc"];
 
   function hexToRgb(hex) {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -113,16 +21,75 @@
     return [r, g, b];
   }
 
-  // Mouse tracking
-  document.getElementById("hero").addEventListener("mousemove", (e) => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
-  });
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
 
-  // Counter animation
+  function createBlobs() {
+    blobs = [];
+    const count = Math.min(12, Math.max(8, Math.round((W * H) / 200000)));
+    for (let i = 0; i < count; i++) {
+      blobs.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.18,
+        vy: (Math.random() - 0.5) * 0.18,
+        radius: 80 + Math.random() * 120,
+        alpha: 0.1 + Math.random() * 0.1,
+        phase: Math.random() * Math.PI * 2,
+        pulseSpeed: 0.3 + Math.random() * 0.45,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      });
+    }
+  }
+
+  function drawBlobs() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = "screen";
+
+    const now = performance.now() * 0.001;
+    blobs.forEach((b) => {
+      // Subtle mouse response for depth.
+      const dx = mouse.x - b.x;
+      const dy = mouse.y - b.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < 260) {
+        b.vx += (dx / (d || 1)) * 0.003;
+        b.vy += (dy / (d || 1)) * 0.003;
+      }
+
+      b.x += b.vx;
+      b.y += b.vy;
+      b.vx *= 0.995;
+      b.vy *= 0.995;
+
+      if (b.x < -220) b.x = W + 220;
+      if (b.x > W + 220) b.x = -220;
+      if (b.y < -220) b.y = H + 220;
+      if (b.y > H + 220) b.y = -220;
+
+      const pulse = 1 + Math.sin(now * b.pulseSpeed + b.phase) * 0.08;
+      const r = b.radius * pulse;
+      const [cr, cg, cb] = hexToRgb(b.color);
+      const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, r);
+      grad.addColorStop(0, `rgba(${cr},${cg},${cb},${b.alpha})`);
+      grad.addColorStop(0.55, `rgba(${cr},${cg},${cb},${b.alpha * 0.45})`);
+      grad.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    ctx.globalCompositeOperation = "source-over";
+    animId = requestAnimationFrame(drawBlobs);
+  }
+
   function animateCounters() {
     document.querySelectorAll(".stat-num").forEach((el) => {
-      const target = parseInt(el.dataset.target);
+      const target = parseInt(el.dataset.target, 10);
       const duration = 1500;
       const start = performance.now();
 
@@ -137,7 +104,6 @@
     });
   }
 
-  // Stagger text lines
   function animateHeroText() {
     const lines = document.querySelectorAll(".hero-line");
     lines.forEach((line, i) => {
@@ -166,30 +132,33 @@
     }, 2000);
   }
 
-  // CTA click → smooth scroll to app
+  document.getElementById("hero").addEventListener("mousemove", (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+  });
+
   document.getElementById("hero-cta").addEventListener("click", () => {
     document.getElementById("app").scrollIntoView({ behavior: "smooth" });
   });
 
-  // Init
   resize();
-  createParticles();
-  drawParticles();
+  createBlobs();
+  drawBlobs();
   animateHeroText();
 
   window.addEventListener("resize", () => {
     resize();
-    createParticles();
+    createBlobs();
   });
 
-  // Stop animation when hero is out of view
   const heroSection = document.getElementById("hero");
   const heroObserver = new IntersectionObserver(
     ([entry]) => {
       if (!entry.isIntersecting) {
         cancelAnimationFrame(animId);
-      } else {
-        drawParticles();
+        animId = null;
+      } else if (!animId) {
+        drawBlobs();
       }
     },
     { threshold: 0 }

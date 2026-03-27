@@ -92,6 +92,19 @@
       </div>
     </div>
 
+    <div id="story-bar" class="reveal">
+      <button id="story-btn" type="button">Start Story Mode</button>
+      <div id="story-copy">
+        <div id="story-title">Guided Narrative</div>
+        <div id="story-text">Walk through key energy transition moments across countries.</div>
+      </div>
+      <div id="story-controls">
+        <button id="story-prev-btn" type="button" aria-label="Previous story step">&larr;</button>
+        <button id="story-next-btn" type="button" aria-label="Next story step">&rarr;</button>
+        <button id="story-stop-btn" type="button">Exit</button>
+      </div>
+    </div>
+
     <div id="shock-nav" class="reveal">
       <div class="shock-nav-top">
         <label class="shock-nav-toggle">
@@ -117,7 +130,9 @@
     <div id="timeline-section" class="reveal">
       <svg id="timeline-chart"></svg>
       <div id="slider-container">
+        <span class="slider-bound" aria-hidden="true">1960</span>
         <input type="range" id="year-slider" min="1960" max="2019" value="2000" step="1">
+        <span class="slider-bound" aria-hidden="true">2019</span>
       </div>
     </div>
 
@@ -151,6 +166,7 @@
       <div id="map-panel">
         <div id="map-container">
           <svg id="map-svg"></svg>
+          <button id="map-reset-btn" type="button" aria-label="Reset map zoom">Reset Zoom</button>
         </div>
         <div id="legend-container"></div>
         <div id="shock-lens-panel" aria-live="polite">
@@ -179,8 +195,12 @@
         </div>
       </div>
       <div id="chart-panel" class="tilt-card">
-        <h3 id="chart-title">Select a country on the map</h3>
+        <div id="chart-head">
+          <h3 id="chart-title">Select a country on the map</h3>
+          <button id="deselect-country-btn" type="button">Deselect</button>
+        </div>
         <svg id="stack-chart"></svg>
+        <div id="brush-hint" aria-live="polite">Tip: Select a country, then drag on the chart to filter map by year range.</div>
         <div id="annotation-box"></div>
       </div>
     </div>
