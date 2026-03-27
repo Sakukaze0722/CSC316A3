@@ -124,7 +124,7 @@
     }, 1100);
 
     setTimeout(() => {
-      document.getElementById("hero-cta").classList.add("visible");
+      document.querySelector(".hero-buttons").classList.add("visible");
     }, 1500);
 
     setTimeout(() => {

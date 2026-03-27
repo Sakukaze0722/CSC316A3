@@ -34,7 +34,10 @@
           <span class="stat-label">Energy Sources</span>
         </div>
       </div>
-      <button id="hero-cta">Explore the Data</button>
+      <div class="hero-buttons">
+        <button id="hero-cta">Explore the Data</button>
+        <button id="hero-tour-btn">Take a Tour</button>
+      </div>
     </div>
     <div class="scroll-hint">
       <div class="scroll-arrow"></div>
@@ -162,6 +165,33 @@
       </div>
     </div>
 
+    <div id="insight-cards" class="reveal">
+      <div class="insight-card" id="ic-renewable">
+        <div class="insight-card-accent" style="background:var(--accent-green)"></div>
+        <div class="insight-card-body">
+          <div class="insight-card-title">Biggest Renewable Gainer</div>
+          <div class="insight-card-metric" id="ic-renewable-metric">—</div>
+          <div class="insight-card-detail" id="ic-renewable-detail">Compared to previous year</div>
+        </div>
+      </div>
+      <div class="insight-card" id="ic-fossil">
+        <div class="insight-card-accent" style="background:var(--accent-orange)"></div>
+        <div class="insight-card-body">
+          <div class="insight-card-title">Fastest Fossil Decline</div>
+          <div class="insight-card-metric" id="ic-fossil-metric">—</div>
+          <div class="insight-card-detail" id="ic-fossil-detail">Compared to previous year</div>
+        </div>
+      </div>
+      <div class="insight-card" id="ic-access">
+        <div class="insight-card-accent" style="background:var(--accent-blue)"></div>
+        <div class="insight-card-body">
+          <div class="insight-card-title">Most Improved Access</div>
+          <div class="insight-card-metric" id="ic-access-metric">—</div>
+          <div class="insight-card-detail" id="ic-access-detail">Compared to previous year</div>
+        </div>
+      </div>
+    </div>
+
     <div id="main-content" class="reveal">
       <div id="map-panel">
         <div id="map-container">
@@ -208,13 +238,38 @@
     <div id="comparison-section" class="reveal">
       <div class="comparison-header">
         <h3>Country Comparison</h3>
-        <span id="comparison-hint">Click countries on the map to compare (max 6)</span>
-        <button id="clear-compare-btn" style="display:none">Clear All</button>
+        <div class="comparison-controls">
+          <div class="segmented-control" id="compare-mode-toggle">
+            <button class="seg-btn active" data-mode="absolute">Absolute</button>
+            <button class="seg-btn" data-mode="normalized">Normalized</button>
+          </div>
+          <button id="clear-compare-btn" style="display:none">Clear All</button>
+        </div>
+      </div>
+      <div id="selection-chips">
+        <span id="chips-hint">Click countries on the map to compare (max 6)</span>
       </div>
       <div id="compare-chart-container">
         <svg id="compare-chart"></svg>
       </div>
       <div id="compare-legend"></div>
+    </div>
+
+    <div id="top-movers" class="reveal">
+      <div class="top-movers-header">
+        <h3>Top Movers</h3>
+        <span class="top-movers-hint" id="movers-year-label">Year-over-year change</span>
+      </div>
+      <div class="top-movers-grid">
+        <div class="movers-column">
+          <div class="movers-col-title up">Renewable ↑</div>
+          <div id="movers-renewable-up" class="movers-list"></div>
+        </div>
+        <div class="movers-column">
+          <div class="movers-col-title down">Fossil ↓</div>
+          <div id="movers-fossil-down" class="movers-list"></div>
+        </div>
+      </div>
     </div>
 
     <section id="sources" class="reveal">
@@ -268,6 +323,20 @@
     </footer>
 
     <div id="tooltip"></div>
+  </div>
+
+  <!-- GUIDED TOUR OVERLAY -->
+  <div id="tour-overlay" class="hidden">
+    <div id="tour-card">
+      <div class="tour-step-indicator" id="tour-step-indicator">Step 1 of 5</div>
+      <h3 id="tour-title">Welcome</h3>
+      <p id="tour-text">Let's walk through the key features.</p>
+      <div class="tour-nav">
+        <button id="tour-prev" class="seg-btn">← Prev</button>
+        <button id="tour-next" class="seg-btn active">Next →</button>
+        <button id="tour-close" class="seg-btn">Skip</button>
+      </div>
+    </div>
   </div>
 
   <script src="iso_codes.js"></script>

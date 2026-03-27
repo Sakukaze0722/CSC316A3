@@ -900,6 +900,7 @@
     allEvents = Array.isArray(events) ? events : [];
     buildEventsIndex(allEvents);
     init();
+    initNewFeatures();
   });
 
   // --- Init ---
@@ -1812,15 +1813,27 @@
     const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
     // Gather all data
+    const isNorm = typeof compareMode !== "undefined" && compareMode === "normalized";
     const allSeries = comparedCountries.map((c, i) => {
       const cdata = getCountryData(c.code)
         .filter(d => d[currentMetric] != null)
         .sort((a, b) => a.year - b.year);
-      return { ...c, data: cdata, color: COMPARE_COLORS[i % COMPARE_COLORS.length] };
+      // For normalized mode: rebase first value to 100
+      let plotData = cdata;
+      if (isNorm && cdata.length > 0) {
+        const base = cdata[0][currentMetric] || 1;
+        plotData = cdata.map(d => {
+          const copy = Object.assign({}, d);
+          copy._normVal = (d[currentMetric] / base) * 100;
+          return copy;
+        });
+      }
+      return { ...c, data: plotData, color: COMPARE_COLORS[i % COMPARE_COLORS.length] };
     });
+    const valAccessor = isNorm ? (d => d._normVal) : (d => d[currentMetric]);
 
     const allYears = allSeries.flatMap(s => s.data.map(d => d.year));
-    const allVals = allSeries.flatMap(s => s.data.map(d => d[currentMetric]));
+    const allVals = allSeries.flatMap(s => s.data.map(valAccessor));
     if (!allYears.length) return;
 
     const x = d3.scaleLinear()
@@ -1835,6 +1848,7 @@
     // Grid lines
     g.append("g").attr("class", "chart-axis")
       .call(d3.axisLeft(y).ticks(5).tickSize(-width).tickFormat(d => {
+        if (isNorm) return d.toFixed(0);
         if (currentMetric === "energy_per_capita") return d >= 1000 ? d3.format(",.0f")(d) : d;
         return d + "%";
       }))
@@ -1846,7 +1860,7 @@
 
     const line = d3.line()
       .x(d => x(d.year))
-      .y(d => y(d[currentMetric]))
+      .y(d => y(valAccessor(d)))
       .curve(d3.curveMonotoneX);
 
     const bisectYear = d3.bisector((d) => d.year).left;
@@ -1868,7 +1882,7 @@
       const areaFill = d3.area()
         .x(d => x(d.year))
         .y0(height)
-        .y1(d => y(d[currentMetric]))
+        .y1(d => y(valAccessor(d)))
         .curve(d3.curveMonotoneX);
 
       g.append("path")
@@ -1974,12 +1988,12 @@
           d3.select(this)
             .style("display", null)
             .attr("cx", x(point.year))
-            .attr("cy", y(point[currentMetric]));
+            .attr("cy", y(valAccessor(point)));
 
           rows.push({
             country: series.country,
             color: series.color,
-            value: point[currentMetric],
+            value: valAccessor(point),
             year: point.year,
           });
         });
@@ -1989,10 +2003,12 @@
           return;
         }
 
-        let html = `<div class="tt-title">${hoverYear} • ${METRIC_LABELS[currentMetric]}</div>`;
+        const modeLabel = isNorm ? `${METRIC_LABELS[currentMetric]} (Normalized)` : METRIC_LABELS[currentMetric];
+        let html = `<div class="tt-title">${hoverYear} • ${modeLabel}</div>`;
         rows.forEach((row) => {
           const yearSuffix = row.year === hoverYear ? "" : ` (${row.year})`;
-          html += `<div class="tt-row"><span class="tt-label" style="color:${row.color}">${row.country}${yearSuffix}:</span><span class="tt-val">${formatMetricValue(row.value, currentMetric)}</span></div>`;
+          const valText = isNorm ? row.value.toFixed(1) : formatMetricValue(row.value, currentMetric);
+          html += `<div class="tt-row"><span class="tt-label" style="color:${row.color}">${row.country}${yearSuffix}:</span><span class="tt-val">${valText}</span></div>`;
         });
 
         d3.select("#tooltip").style("display", "block").html(html);
@@ -2007,7 +2023,7 @@
     g.append("text")
       .attr("x", -margin.left + 4).attr("y", -8)
       .attr("fill", "var(--text-muted)").attr("font-size", 10).attr("font-weight", 600)
-      .text(METRIC_LABELS[currentMetric]);
+      .text(isNorm ? METRIC_LABELS[currentMetric] + " (Base=100)" : METRIC_LABELS[currentMetric]);
 
     // Interactive legend
     allSeries.forEach((s, idx) => {
@@ -2384,4 +2400,373 @@
       startPlayInterval();
     }
   }
+
+  // ============================================================
+  // SELECTION CHIPS
+  // ============================================================
+  function updateSelectionChips() {
+    const container = d3.select("#selection-chips");
+    container.selectAll(".country-chip").remove();
+    const hint = container.select("#chips-hint");
+    hint.style("display", comparedCountries.length > 0 ? "none" : "inline");
+
+    comparedCountries.forEach((c, i) => {
+      const color = COMPARE_COLORS[i % COMPARE_COLORS.length];
+      const chip = container.append("span")
+        .attr("class", "country-chip")
+        .style("--chip-color", color)
+        .style("--chip-glow", color + "44");
+
+      chip.append("span").attr("class", "chip-dot").style("background", color);
+      chip.append("span").text(c.country);
+      chip.append("span")
+        .attr("class", "chip-remove")
+        .text("\u2715")
+        .on("click", function (event) {
+          event.stopPropagation();
+          comparedCountries = comparedCountries.filter(cc => cc.code !== c.code);
+          if (selectedCountry === c.code) clearSelectedCountry();
+          drawComparisonChart();
+          updateSelectionChips();
+          updateShockNav();
+          updateBrushHintText();
+          updateDeselectButton();
+        });
+
+      chip.on("click", function () {
+        focusCountry(c.code, c.country, false);
+      });
+    });
+  }
+
+  // ============================================================
+  // INSIGHT CARDS — auto-generated window insights
+  // ============================================================
+  function updateInsightCards() {
+    const refYear = brushedYearRange ? brushedYearRange[0] : Math.max(currentYear - 1, 1960);
+    const curYear = brushedYearRange ? brushedYearRange[1] : currentYear;
+    const label = brushedYearRange
+      ? `${brushedYearRange[0]}–${brushedYearRange[1]}`
+      : `${refYear} → ${curYear}`;
+
+    const regionFilter = (d) => currentRegion === "all" || d.region === currentRegion;
+
+    // Build per-country deltas
+    const deltas = [];
+    dataByCode.forEach((rows, code) => {
+      const before = rows.find(r => r.year === refYear && regionFilter(r));
+      const after = rows.find(r => r.year === curYear && regionFilter(r));
+      if (!before || !after) return;
+      deltas.push({
+        code,
+        country: after.country || before.country,
+        dRenew: (after.renewable_pct ?? 0) - (before.renewable_pct ?? 0),
+        dFossil: (after.fossil_fuel_pct ?? 0) - (before.fossil_fuel_pct ?? 0),
+        dAccess: (after.access_electricity ?? 0) - (before.access_electricity ?? 0),
+      });
+    });
+
+    // Card 1: Biggest renewable gainer
+    const renewSort = deltas.filter(d => d.dRenew > 0).sort((a, b) => b.dRenew - a.dRenew);
+    if (renewSort.length > 0) {
+      const top = renewSort[0];
+      d3.select("#ic-renewable-metric").text(`${top.country} +${top.dRenew.toFixed(1)}%`);
+      d3.select("#ic-renewable-detail").text(label);
+      d3.select("#ic-renewable").datum(top);
+    } else {
+      d3.select("#ic-renewable-metric").text("—");
+      d3.select("#ic-renewable-detail").text("No data for this period");
+    }
+
+    // Card 2: Fastest fossil decline
+    const fossilSort = deltas.filter(d => d.dFossil < 0).sort((a, b) => a.dFossil - b.dFossil);
+    if (fossilSort.length > 0) {
+      const top = fossilSort[0];
+      d3.select("#ic-fossil-metric").text(`${top.country} ${top.dFossil.toFixed(1)}%`);
+      d3.select("#ic-fossil-detail").text(label);
+      d3.select("#ic-fossil").datum(top);
+    } else {
+      d3.select("#ic-fossil-metric").text("—");
+      d3.select("#ic-fossil-detail").text("No data for this period");
+    }
+
+    // Card 3: Most improved access
+    const accessSort = deltas.filter(d => d.dAccess > 0).sort((a, b) => b.dAccess - a.dAccess);
+    if (accessSort.length > 0) {
+      const top = accessSort[0];
+      d3.select("#ic-access-metric").text(`${top.country} +${top.dAccess.toFixed(1)}%`);
+      d3.select("#ic-access-detail").text(label);
+      d3.select("#ic-access").datum(top);
+    } else {
+      d3.select("#ic-access-metric").text("—");
+      d3.select("#ic-access-detail").text("No data for this period");
+    }
+
+    // Click insight card → select country
+    d3.selectAll(".insight-card").on("click", function () {
+      const d = d3.select(this).datum();
+      if (d && d.code) focusCountry(d.code, d.country, true);
+    });
+  }
+
+  // ============================================================
+  // TOP MOVERS — ranking panel
+  // ============================================================
+  function updateTopMovers() {
+    const refYear = brushedYearRange ? brushedYearRange[0] : Math.max(currentYear - 1, 1960);
+    const curYear = brushedYearRange ? brushedYearRange[1] : currentYear;
+    const regionFilter = (d) => currentRegion === "all" || d.region === currentRegion;
+
+    // Label
+    const labelText = brushedYearRange
+      ? `Change from ${brushedYearRange[0]} to ${brushedYearRange[1]}`
+      : `Year-over-year change (${refYear} → ${curYear})`;
+    d3.select("#movers-year-label").text(labelText);
+
+    // Build deltas
+    const deltas = [];
+    dataByCode.forEach((rows, code) => {
+      const before = rows.find(r => r.year === refYear && regionFilter(r));
+      const after = rows.find(r => r.year === curYear && regionFilter(r));
+      if (!before || !after) return;
+      deltas.push({
+        code,
+        country: after.country || before.country,
+        dRenew: (after.renewable_pct ?? 0) - (before.renewable_pct ?? 0),
+        dFossil: (after.fossil_fuel_pct ?? 0) - (before.fossil_fuel_pct ?? 0),
+      });
+    });
+
+    // Renewable gainers
+    const renewUp = deltas.filter(d => d.dRenew > 0).sort((a, b) => b.dRenew - a.dRenew).slice(0, 5);
+    const renewContainer = d3.select("#movers-renewable-up");
+    renewContainer.selectAll("*").remove();
+    renewUp.forEach((d, i) => {
+      const row = renewContainer.append("div").attr("class", "mover-row")
+        .on("click", () => focusCountry(d.code, d.country, true));
+      row.append("span").attr("class", "mover-rank").text(i + 1);
+      row.append("span").attr("class", "mover-name").text(d.country);
+      row.append("span").attr("class", "mover-delta up").text("+" + d.dRenew.toFixed(1) + "%");
+    });
+    if (renewUp.length === 0) {
+      renewContainer.append("div").attr("class", "mover-row")
+        .append("span").attr("class", "mover-name").style("color", "var(--text-muted)").text("No data");
+    }
+
+    // Fossil decliners
+    const fossilDown = deltas.filter(d => d.dFossil < 0).sort((a, b) => a.dFossil - b.dFossil).slice(0, 5);
+    const fossilContainer = d3.select("#movers-fossil-down");
+    fossilContainer.selectAll("*").remove();
+    fossilDown.forEach((d, i) => {
+      const row = fossilContainer.append("div").attr("class", "mover-row")
+        .on("click", () => focusCountry(d.code, d.country, true));
+      row.append("span").attr("class", "mover-rank").text(i + 1);
+      row.append("span").attr("class", "mover-name").text(d.country);
+      row.append("span").attr("class", "mover-delta down").text(d.dFossil.toFixed(1) + "%");
+    });
+    if (fossilDown.length === 0) {
+      fossilContainer.append("div").attr("class", "mover-row")
+        .append("span").attr("class", "mover-name").style("color", "var(--text-muted)").text("No data");
+    }
+  }
+
+  // ============================================================
+  // COMPARISON MODE: Absolute vs Normalized
+  // ============================================================
+  let compareMode = "absolute"; // "absolute" | "normalized"
+
+  function initCompareToggle() {
+    d3.selectAll("#compare-mode-toggle .seg-btn").on("click", function () {
+      const mode = d3.select(this).attr("data-mode");
+      if (mode === compareMode) return;
+      compareMode = mode;
+      d3.selectAll("#compare-mode-toggle .seg-btn").classed("active", false);
+      d3.select(this).classed("active", true);
+      drawComparisonChart();
+    });
+  }
+
+  // Patch drawComparisonChart to support normalized mode
+  const _origDrawComparisonChart = drawComparisonChart;
+
+  // We override by wrapping — the normalized transform happens in-place
+  // We need to modify the data before the chart draws.
+  // Since the chart reads `currentMetric` on each country's data, we normalize within the draw call.
+
+  // ============================================================
+  // GUIDED TOUR
+  // ============================================================
+  const TOUR_STEPS = [
+    {
+      title: "World Map",
+      text: "The choropleth map shows each country colored by the selected energy metric. Hover for details, click to select a country.",
+      target: "#map-container",
+    },
+    {
+      title: "Timeline & Playback",
+      text: "Drag the year slider or press Play to animate through 60 years of energy data. The map and all charts update in sync.",
+      target: "#timeline-section",
+    },
+    {
+      title: "Energy Mix Chart",
+      text: "After selecting a country, this stacked area chart breaks down its electricity sources over time. Drag to brush a year range.",
+      target: "#chart-panel",
+    },
+    {
+      title: "Country Comparison",
+      text: "Click multiple countries (up to 6) to overlay their trends. Toggle between Absolute and Normalized views.",
+      target: "#comparison-section",
+    },
+    {
+      title: "Top Movers & Insights",
+      text: "The insight cards and Top Movers panel automatically surface the biggest year-over-year changes. Click any entry to focus that country.",
+      target: "#top-movers",
+    },
+  ];
+
+  let tourStep = 0;
+  let tourHighlightEl = null;
+
+  function openTour() {
+    tourStep = 0;
+    document.getElementById("tour-overlay").classList.remove("hidden");
+    document.getElementById("app").scrollIntoView({ behavior: "smooth" });
+    renderTourStep();
+  }
+
+  function closeTour() {
+    document.getElementById("tour-overlay").classList.add("hidden");
+    if (tourHighlightEl) {
+      tourHighlightEl.remove();
+      tourHighlightEl = null;
+    }
+  }
+
+  function renderTourStep() {
+    const step = TOUR_STEPS[tourStep];
+    d3.select("#tour-step-indicator").text(`Step ${tourStep + 1} of ${TOUR_STEPS.length}`);
+    d3.select("#tour-title").text(step.title);
+    d3.select("#tour-text").text(step.text);
+    d3.select("#tour-prev").property("disabled", tourStep === 0);
+    d3.select("#tour-next").text(tourStep === TOUR_STEPS.length - 1 ? "Finish" : "Next →");
+
+    // Highlight target element
+    if (tourHighlightEl) tourHighlightEl.remove();
+    const targetEl = document.querySelector(step.target);
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => {
+        const rect = targetEl.getBoundingClientRect();
+        const ring = document.createElement("div");
+        ring.className = "tour-highlight-ring";
+        ring.style.top = (rect.top + window.scrollY - 4) + "px";
+        ring.style.left = (rect.left - 4) + "px";
+        ring.style.width = (rect.width + 8) + "px";
+        ring.style.height = (rect.height + 8) + "px";
+        document.body.appendChild(ring);
+        tourHighlightEl = ring;
+      }, 400);
+    }
+  }
+
+  function initTour() {
+    d3.select("#tour-next").on("click", () => {
+      if (tourStep >= TOUR_STEPS.length - 1) {
+        closeTour();
+      } else {
+        tourStep++;
+        renderTourStep();
+      }
+    });
+    d3.select("#tour-prev").on("click", () => {
+      if (tourStep > 0) {
+        tourStep--;
+        renderTourStep();
+      }
+    });
+    d3.select("#tour-close").on("click", closeTour);
+
+    // Hero tour button
+    const heroTourBtn = document.getElementById("hero-tour-btn");
+    if (heroTourBtn) {
+      heroTourBtn.addEventListener("click", () => {
+        document.getElementById("app").scrollIntoView({ behavior: "smooth" });
+        setTimeout(openTour, 600);
+      });
+    }
+  }
+
+  // ============================================================
+  // HOOK NEW FEATURES INTO EXISTING UPDATE CYCLE
+  // ============================================================
+
+  // Patch focusCountry to update chips
+  const _origFocusCountry = focusCountry;
+  // We can't reassign a function declaration, so we hook into drawComparisonChart instead.
+
+  // Wrap onYearChange to also update new panels
+  const _origOnYearChange = onYearChange;
+
+  // Patch init
+  const _origInit = init;
+
+  // Instead of patching, we add our updates to the places that call drawComparisonChart
+  // by overriding drawComparisonChart to also call updateSelectionChips.
+  // Let's use a MutationObserver approach: listen for compare-legend changes.
+  // Actually the simplest: just call our updates after each relevant existing function call.
+
+  // We'll use a proxy approach: override the key functions.
+
+  // The cleanest way: add an interval-free observer that hooks after DOM settles.
+  // But actually, the simplest: just patch onYearChange and init.
+
+  // Since these are function declarations inside an IIFE, we can't reassign them.
+  // Instead, we'll add a periodic sync. No — that's ugly.
+  // Best approach: add calls directly at the end of existing functions by
+  // hooking into the comparison chart redraw via MutationObserver on #compare-legend.
+
+  // Actually the CLEANEST approach for this codebase: add updateSelectionChips/updateInsightCards/updateTopMovers
+  // calls into onYearChange and the other trigger points. But since we already read those and can edit them:
+
+  // Let's just directly edit the trigger points.
+  // We already have the code in place. Let me just initialize everything here and
+  // use a single update function that piggybacks on a D3 dispatch or timer.
+
+  // SIMPLEST: create a single function that updates all new panels, and call it via
+  // wrapping the #year-slider input event + other triggers.
+  function updateNewPanels() {
+    updateSelectionChips();
+    updateInsightCards();
+    updateTopMovers();
+  }
+
+  // Hook: observe year-label text changes (covers ALL year change paths)
+  let _lastObservedYear = null;
+  const yearObserver = new MutationObserver(() => {
+    const y = parseInt(document.getElementById("year-label").textContent, 10);
+    if (!isNaN(y) && y !== _lastObservedYear) {
+      _lastObservedYear = y;
+      updateInsightCards();
+      updateTopMovers();
+    }
+  });
+
+  // Hook: observe compare-legend for chip sync
+  const legendObserver = new MutationObserver(() => {
+    updateSelectionChips();
+  });
+
+  // Bootstrap all new features after original init
+  function initNewFeatures() {
+    initCompareToggle();
+    initTour();
+    updateNewPanels();
+
+    const yearLabel = document.getElementById("year-label");
+    if (yearLabel) yearObserver.observe(yearLabel, { childList: true, characterData: true, subtree: true });
+
+    const legendEl = document.getElementById("compare-legend");
+    if (legendEl) legendObserver.observe(legendEl, { childList: true });
+  }
+
 })();
