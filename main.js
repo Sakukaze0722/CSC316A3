@@ -1474,6 +1474,8 @@
           d3.select("#brush-label").remove();
           updateMap();
           updateBrushHintText();
+          updateInsightCards();
+          updateTopMovers();
           return;
         }
         const [x0, x1] = event.selection;
@@ -1495,6 +1497,8 @@
 
         updateMapForBrush(y0, y1);
         updateBrushHintText();
+        updateInsightCards();
+        updateTopMovers();
       });
 
     g.append("g")
@@ -2206,6 +2210,8 @@
       }
       updateShockNav();
       updateBrushHintText();
+      updateInsightCards();
+      updateTopMovers();
     });
 
     // Region filter
@@ -2235,6 +2241,8 @@
       updatePolicyShockLensPanel();
       updateShockNav();
       updateBrushHintText();
+      updateInsightCards();
+      updateTopMovers();
     });
 
     // Clear comparison list
